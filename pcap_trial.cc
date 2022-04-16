@@ -27,6 +27,7 @@ int main (int argc, char *argv[]) {
         std::cout << "Starting pcap session on: " <<dev << "\n";
     } else {
         std::cerr << "Expected one CLI arg for net if dev name.\n";
+        return -1;
     }
     
     /*
@@ -45,6 +46,7 @@ int main (int argc, char *argv[]) {
         char *name = itd->name;
         if (!strcmp(name, dev)) {
             std::cout << "Found target device: "<< name << "\n";
+            continue;
         } else {
             std::cout << "Not the device we're looking for: " << name << "\n";
         }
