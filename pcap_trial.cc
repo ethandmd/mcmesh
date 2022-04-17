@@ -5,10 +5,10 @@
 
 /*
 *   Compile with:
-*   g++ pcap_trial.cc -o pcap_trial lpcap
+*   g++ pcap_trial.cc -o pcap_trial -lpcap
 *   
 *   Run with:
-*   sudo ./pcap_trial     #For socket permissions
+*   sudo ./pcap_trial wlan0    #For socket permissions
 */
 
 int main (int argc, char *argv[]) {
