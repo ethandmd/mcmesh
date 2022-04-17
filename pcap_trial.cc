@@ -73,5 +73,6 @@ int main (int argc, char *argv[]) {
             printf("\n");
         }
     }
+    pcap_close(handle);
     return 0;
 }
