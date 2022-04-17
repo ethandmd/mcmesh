@@ -7,12 +7,14 @@
 #include <arpa/inet.h>
 
 int main() {
-    int s;
-    s = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-    if (s == -1) { return -1; }
+    int pack_sock;
+    pack_sock = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    if (pack_sock == -1) { return -1; }
 
     void* buffer = (void *)malloc(ETH_FRAME_LEN);
-    int receivedBytes = recvfrom(s, buffer, ETH_FRAME_LEN, 0, NULL, NULL);
+    
+    int receivedBytes = recvfrom(pack_sock, buffer, ETH_FRAME_LEN, 0, NULL, NULL);
+
     printf("%d bytes received\n", receivedBytes);
     int i;
     for (i = 0; i < receivedBytes; i++)
