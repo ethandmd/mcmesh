@@ -12,7 +12,13 @@
 
 /* 
 *   Compile with:
-*       gcc raw_sock_trial.c -o raw_sock_trial
+*       $ gcc raw_sock_trial.c -o raw_sock_trial
+*
+*   Run:
+*       $ sudo raw_sock_trial IF_NAME   #Works with RTL8812au in monitor mode via:
+*                                       # $ sudo ip link set IFNAME down
+*                                       # $ sudo iw dev IFNAME set type monitor
+*                                       # $ sudo ip link set IFNAME up
 */
 
 
