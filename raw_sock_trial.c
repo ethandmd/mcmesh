@@ -25,7 +25,7 @@
 *       
 *   [x] Initialize and create socket
 *   [x] Bind socket to interface (in this case, a monitor mode capable wifi interface)
-*   [ ] Set interface to monitor mode
+*   [~] Set interface to monitor mode (Currently using ioctl call, instead of setsockopt() or just rewrite with netlink.)
 *   [x] Read bytes from socket into buffer (memset buffer to appropriate size per frame type)
 *   [ ] Type cast link layer header, discover IP layer protocol.    
 *   [ ] Access payload data ( data := begin packet + header size)
@@ -36,6 +36,8 @@ int main(int argc, char *argv[]) {
 
     char *if_name;
     int sockfd;
+
+    printf("Configuring scan...\n");
 
     /*Capture CLI arg for net if dev.*/
     if (argc < 1) {
@@ -63,11 +65,25 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+    /* Check interface MAC address. */
+    if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) < 0) {
+        printf("Unable to get hw addr.\n");
+    } else {
+        printf("This interface Address : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",ifr.ifr_hwaddr.sa_data[0], \
+        ifr.ifr_hwaddr.sa_data[1], \
+        ifr.ifr_hwaddr.sa_data[2], \
+        ifr.ifr_hwaddr.sa_data[3], \
+        ifr.ifr_hwaddr.sa_data[4], \
+        ifr.ifr_hwaddr.sa_data[5]);
+    }
+
     /*Step 2b: Get net if dev index in order to bind socket.*/
     if (ioctl(sockfd, SIOCGIFINDEX, &ifr) < 0) {
         printf("Error, unable to get net if index.\n");
         return -1;
     }
+
+
 
     /*Step 2c: Set appropriate link layer struct info for socket bind() call.*/
     struct sockaddr_ll addr;                //Zero out all fields for link layer sock addr.
@@ -82,27 +98,28 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    struct ifreq pifr;
+    /*struct ifreq pifr;
     memset(&pifr, 0, sizeof(pifr));
     memcpy(pifr.ifr_name, if_name, IFNAMSIZ);
-    if (ioctl(sockfd, SIOCGIFFLAGS, &pifr) < 0) {
+    */
+    if (ioctl(sockfd, SIOCGIFFLAGS, &ifr) < 0) {
         printf("Error getting device flags.\n");
         return -1;
     }
 
-    if (pifr.ifr_flags & IFF_PROMISC) {
+    if (ifr.ifr_flags & IFF_PROMISC) {
         printf("Device is in promiscuous mode.\n");
     } else {
         printf("Putting device in promiscuous mode...\n");
-        pifr.ifr_flags |= IFF_PROMISC;
+        ifr.ifr_flags |= IFF_PROMISC;
         
-        if (ioctl(sockfd, SIOCSIFFLAGS, &pifr) < 0) {
+        if (ioctl(sockfd, SIOCSIFFLAGS, &ifr) < 0) {
             printf("Could not put device into promiscuous mode.\n");
             return -1;
         }
-        printf("Successfully put device into promiscuous mode.\n");
-        
+        printf("Successfully put device into promiscuous mode.\n");        
     }
+    printf("Setup complete.\n\n");
 
     /*struct packet_mreq mr = {0};    //Legal?
     //memcpy(&mr, 0, sizeof(mr));
