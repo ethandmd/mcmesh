@@ -107,7 +107,8 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    if (ifr.ifr_flags & IFF_PROMISC) {
+    /* Promiscuous mode is not what we're going for. */
+    /*if (ifr.ifr_flags & IFF_PROMISC) {
         printf("Device is in promiscuous mode.\n");
     } else {
         printf("Putting device in promiscuous mode...\n");
