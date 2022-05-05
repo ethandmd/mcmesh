@@ -18,7 +18,15 @@ $ sudo apt-get install libnl-genl-3-dev
 We need to install libnl (or in the future possibly go to libmnl, libnl tiny (OpenWRT)) in order to use the ```nl80211.h``` enums.
 
 ### Guide to this universe:
-#### Netlink: (Code mostly referenced from ```iw```.).
+
+#### Capture Goal:
++ Want to capture all nearby wireless traffic in the 2.4-5 GHz range.
+    + Delete all interfaces from net device, create a new virtual interface in monitor mode.
+    + Recall:
+        + Monitor mode: Capture all packets in the air, not associated to AP.
+        + Promiscuous mode: Capture all packets associated to AP.
+
+#### Netlink: (Code mostly referenced from ```iw```, this seems to be the canonical way to learn nl80211 api + netlink).
 + Create & allocate a netlink socket: ```struct nl_sock *sk = nl_socket_alloc();```
 + Destroy & deallocate netlink socket: ```nl_socket_free(sk);```
 + Set socket attributes: modify callback, buffer size, auto-ack, etc...
