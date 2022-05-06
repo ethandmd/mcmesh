@@ -377,13 +377,14 @@ int handler_create_new_if(nl_handle *nl, enum nl80211_iftype if_type, int wiphy,
         nl->nl80211_id,
         0,
         0,
-        NL80211_CMD_DEL_INTERFACE,
+        NL80211_CMD_NEW_INTERFACE,
         0
     );
-    nla_put_u32(msg, NL80211_ATTR_WIPHY, wiphy);
-    nla_put_u32(msg, NL80211_ATTR_IFTYPE, if_type);
+    //nla_put_u32(msg, NL80211_ATTR_WIPHY, wiphy);
     nla_put_string(msg, NL80211_ATTR_IFNAME, ifname);
+    nla_put_u32(msg, NL80211_ATTR_IFTYPE, if_type);
     if (compare_if_type(if_type, "monitor")) {
+        printf("Adding monitor flags...\n");
         add_monitor_flags(msg);
     }
     
