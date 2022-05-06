@@ -2,7 +2,8 @@
 Use netlink and a monitor-mode capable wifi chipset to scan nearby wifi traffic. Intended for use on a raspberry pi.
 
 ## Set up:
-### Get driver for RTL8812au on RPI3B:
+### RPI3B with Alfa wireless chipset (RTL8812au):
+#### Get driver for RTL8812au on RPI3B:
 ```
 $ git clone -b v5.6.4.2 https://github.com/aircrack-ng/rtl8812au.git
 $ cd rtl*
@@ -11,11 +12,13 @@ $ sudo apt-get install raspberrypi-kernel-headers
 $ make && sudo make install   #then reboot
 ```
 
-### Get netlink on RPI3B:
+### Get netlink
+#### RPI3B:
 ```
 $ sudo apt-get install libnl-genl-3-dev
 ```
 We need to install libnl (or in the future possibly go to libmnl, libnl tiny (OpenWRT)) in order to use the ```nl80211.h``` enums.
+Most linux distributions have libnl via their respective package managers.
 
 ### Guide to this universe:
 
