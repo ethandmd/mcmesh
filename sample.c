@@ -31,12 +31,12 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Could not retrieve interface information.\n");
         return -1;
     }
-    printf("Current device interfae data:\n");
-    printf("IFNAME: %s\n", info.if_name);
-    printf("IFINDEX: %d\n", info.if_index);
-    printf("WDEV: %d\n", info.wdev);
-    printf("WIPHY: %d\n", info.wiphy);
-    printf("IFTYPE: %d\n", info.if_type);
+    printf("Given device interface info:\n");
+    printf("\tIFNAME: %s\n", info.if_name);
+    printf("\tIFINDEX: %d\n", info.if_index);
+    printf("\tWDEV: %d\n", info.wdev);
+    printf("\tWIPHY: %d\n", info.wiphy);
+    printf("\tIFTYPE: %d\n", info.if_type);
     printf("\n");
 
     const char *new_iftype = "monitor";
@@ -49,7 +49,6 @@ int main(int argc, char** argv) {
         //delete_if(&nl, if_index);
         create_new_if(&nl, new_iftype, info.wiphy, new_ifname);
         bind_if_index = get_if_index(new_ifname);
-        printf("New ifindex:%d\n", bind_if_index);
         printf("Created new monitor mode interface.\n");
     } else {
         printf("Device is already in monitor mode.\n");
