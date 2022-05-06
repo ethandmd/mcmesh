@@ -28,7 +28,6 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Could not retriece if information.\n");
         return -1;
     }
-    printf("Wiphy: %d\n", original_info.wiphy);
 
     const char *new_iftype = "monitor";
     const char *new_ifname = "mcmesh0";
@@ -36,10 +35,9 @@ int main(int argc, char** argv) {
     if (compare_if_type(original_info.iftype, new_iftype) == 0) {
         printf("Device not currently in monitor mode.\n");
         //set_if_type(&nl, new_iftype, if_index);
-        delete_if(&nl, if_index);
-        printf("Line 40\n");
+        //printf("Put device in monitor mode.\n");
+        //delete_if(&nl, if_index);
         create_new_if(&nl, new_iftype, original_info.wiphy, new_ifname);
-        printf("Line 42\n");
         new_if_index = get_if_index(new_ifname);
         printf("Created new monitor mode interface.\n");
     } else {
@@ -55,7 +53,6 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-
     allocate_packet_buffer(&pb);
 
     //Just for testing, remove asap.
@@ -67,7 +64,8 @@ int main(int argc, char** argv) {
     printf("Restoring device to managed mode.\n");
     const char *ret_iftype = "managed";
     //set_if_type(&nl, ret_iftype, if_index);
-    create_new_if(&nl, ret_iftype, original_info.wiphy, if_name);
+    delete_if(&nl, new_if_index);
+    //create_new_if(&nl, ret_iftype, original_info.wiphy, if_name);
     nl_cleanup(&nl);
 
     return 0;
