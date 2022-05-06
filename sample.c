@@ -13,39 +13,48 @@
 */
 
 int main(int argc, char** argv) {
-    const char *if_name = argv[1];
-    int ITER = strtol(argv[2], NULL , 10);
-    int if_index = get_if_index(if_name);
+
     nl_handle nl;
     sk_handle skh;
     packet_buffer pb;
-    struct if_info original_info;
+    struct if_info info;
+    info.if_name = argv[1];
+    int ITER = strtol(argv[2], NULL , 10);
+    int if_index = get_if_index(info.if_name);
 
     nl_init(&nl);
     if (!nl.sk) {
         return -1;
     }
 
-    if (get_if_info(&nl, &original_info, if_index) < 0) {
+    if (get_if_info(&nl, &info, if_index) < 0) {
         fprintf(stderr, "Could not retrieve interface information.\n");
         return -1;
     }
+    printf("Current device interfae data:\n");
+    printf("IFNAME: %s\n", info.if_name);
+    printf("IFINDEX: %d\n", info.if_index);
+    printf("WDEV: %d\n", info.wdev);
+    printf("WIPHY: %d\n", info.wiphy);
+    printf("IFTYPE: %d\n", info.if_type);
+    printf("\n");
 
     const char *new_iftype = "monitor";
     const char *new_ifname = "mcmesh0";
     int new_if_index;
-    if (compare_if_type(original_info.iftype, new_iftype) == 0) {
+    if (compare_if_type(info.if_type, new_iftype) == 0) {
         printf("Device not currently in monitor mode.\n");
         //set_if_type(&nl, new_iftype, if_index, if_name);
         //printf("Put device in monitor mode.\n");
-        //delete_if(&nl, if_index);
-        create_new_if(&nl, new_iftype, original_info.wiphy, new_ifname);
+        delete_if(&nl, if_index);
+        create_new_if(&nl, new_iftype, info.wiphy, new_ifname);
         new_if_index = get_if_index(new_ifname);
-        //printf("New ifindex:%d\n", new_if_index);
+        printf("New ifindex:%d\n", new_if_index);
         printf("Created new monitor mode interface.\n");
     } else {
         printf("Device is already in monitor mode.\n");
     }
+    printf("\n");
 
     create_pack_socket(&skh);
     if (skh.sockfd < 0) {

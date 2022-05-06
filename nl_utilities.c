@@ -160,13 +160,19 @@ int if_info_callback(struct nl_msg *msg, void *arg) {
     );
 
     if (tb_msg[NL80211_ATTR_IFNAME]) {
-        info->ifname = nla_get_string(tb_msg[NL80211_ATTR_IFNAME]);
+        info->if_name = nla_get_string(tb_msg[NL80211_ATTR_IFNAME]);
+    }
+    if (tb_msg[NL80211_ATTR_IFINDEX]) {
+        info->if_index = nla_get_u32(tb_msg[NL80211_ATTR_IFNAME]);
+    }
+    if (tb_msg[NL80211_ATTR_WDEV]) {
+        info->wdev = nla_get_u64(tb_msg[NL80211_ATTR_WDEV]);
     }
     if (tb_msg[NL80211_ATTR_WIPHY]) {
         info->wiphy = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY]);
     }
     if (tb_msg[NL80211_ATTR_IFTYPE]) {
-        info->iftype = (enum nl80211_iftype)nla_get_u32(tb_msg[NL80211_ATTR_IFTYPE]);
+        info->if_type = nla_get_u32(tb_msg[NL80211_ATTR_IFTYPE]);
     }
 
     return NL_SKIP;
@@ -280,7 +286,7 @@ int add_monitor_flags(struct nl_msg *msg) {
     }
 
     //nla_put_flag(flag_msg, NL80211_MNTR_FLAG_FCSFAIL);
-    //nla_put_flag(flag_msg, NL80211_MNTR_FLAG_CONTROL);
+    nla_put_flag(flag_msg, NL80211_MNTR_FLAG_CONTROL);
     nla_put_flag(flag_msg, NL80211_MNTR_FLAG_OTHER_BSS);
 
     return nla_put_nested(msg, NL80211_ATTR_MNTR_FLAGS, flag_msg);

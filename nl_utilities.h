@@ -7,10 +7,11 @@ typedef struct {
 } nl_handle;
 
 struct if_info {
-    const char *ifname;
+    const char *if_name;
     int if_index;
+    int wdev;
     int wiphy;
-    int iftype;
+    int if_type;
 };
 
 void nl_init(nl_handle *nl);
