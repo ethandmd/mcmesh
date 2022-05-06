@@ -9,8 +9,7 @@ int main(int argc, char** argv) {
     nl_handle nl;
     nl_init(&nl);
 
-
-    int t = get_iftype(&nl, if_index);
+    //int t = get_iftype(&nl, if_index);
 
     set_iftype_monitor(&nl, if_index);
     

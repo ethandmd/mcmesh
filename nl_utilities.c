@@ -68,24 +68,24 @@ int get_ifindex(char *if_name) {
 *   Callback for error handling.
 *   https://git.kernel.org/pub/scm/linux/kernel/git/jberg/iw.git :: genl.c
 */
-static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err,
-			 void *arg)
-{
-	int *ret = arg;
-	*ret = err->error;
-	return NL_STOP;
-}
+// static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err,
+// 			 void *arg)
+// {
+// 	int *ret = arg;
+// 	*ret = err->error;
+// 	return NL_STOP;
+// }
 
-/*
-*   Callback for NL_CB_ACK.
-*   https://git.kernel.org/pub/scm/linux/kernel/git/jberg/iw.git :: genl.c
-*/
-static int ack_handler(struct nl_msg *msg, void *arg)
-{
-	int *ret = arg;
-	*ret = 0;
-	return NL_STOP;
-}
+// /*
+// *   Callback for NL_CB_ACK.
+// *   https://git.kernel.org/pub/scm/linux/kernel/git/jberg/iw.git :: genl.c
+// */
+// static int ack_handler(struct nl_msg *msg, void *arg)
+// {
+// 	int *ret = arg;
+// 	*ret = 0;
+// 	return NL_STOP;
+// }
 
 /*
 *   Allocates a netlink message. Fills generic netlink message header for nl80211
@@ -110,6 +110,18 @@ static int ack_handler(struct nl_msg *msg, void *arg)
 //     );
 //     return 0;
 // }
+// static const char *get_iftype_name(enum nl80211_iftype iftype) {
+//     if (iftype == NL80211_IFTYPE_MONITOR) {
+//         return "MONITOR";
+//     } else {
+//         return "NOT MONITOR";
+//     }
+// }
+
+// struct iftype_name {
+//     const char* ifname;
+//     const char* type_name;
+// }
 
 /* 
 *   Callback function for getting interface type. 
@@ -118,85 +130,87 @@ static int ack_handler(struct nl_msg *msg, void *arg)
 *   by index type. The maxtype is for backwards compatibility. This is a moment
 *   where I miss how simple ioctl() is, yet can appreciate nl80211.
 */
-static int print_iftype_handler(struct nl_msg *msg, void *arg) {
-    struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
-    struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];    //Highest attr num currently defined +1.
+// static int print_iftype_handler(struct nl_msg *msg, void *arg) {
+//     struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+//     struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];    //Highest attr num currently defined +1.
 
-    //Create attr index from stream of attrs
-    nla_parse(
-        tb_msg,                     //Idx array; filled with maxtype+1 elts
-        NL80211_ATTR_MAX,           //Maxtype expected
-        genlmsg_attrdata(gnlh, 0),  //Head of attr stream
-        genlmsg_attrlen(gnlh, 0),   //Length of attr stream
-        NULL                        //Attribute validation policy
-        );
+//     //Create attr index from stream of attrs
+//     nla_parse(
+//         tb_msg,                     //Idx array; filled with maxtype+1 elts
+//         NL80211_ATTR_MAX,           //Maxtype expected
+//         genlmsg_attrdata(gnlh, 0),  //Head of attr stream
+//         genlmsg_attrlen(gnlh, 0),   //Length of attr stream
+//         NULL                        //Attribute validation policy
+//         );
 
-    if (tb_msg[NL80211_ATTR_IFTYPE]) {
-        printf("Type %d\n", nla_get_u32(tb_msg[NL80211_ATTR_IFTYPE]));
-    }
+//     if (tb_msg[NL80211_ATTR_IFNAME]) {
+//         strcpy()
+//     }
 
-    return NL_SKIP;
-}
+//     if (tb_msg[NL80211_ATTR_IFTYPE]) {
+//         strcpy(iftype_arg, get_iftype_name(nla_get_u32(tb_msg[NL80211_ATTR_IFTYPE])));
+//     }
 
-struct 
+//     return NL_SKIP;
+// }
 
-/*
-*   Public:
-*/
-int get_iftype(nl_handle *nl, int if_index) {
-    int ret;
-    struct nl_msg *msg = nlmsg_alloc();
-    if (!msg) {
-        fprintf(stderr, "Could not allocate netlink message.\n");
-        return -1;
-    }
-    //Add generic netlink header to netlink message.
-    genlmsg_put(
-        msg,                        //nl msg object
-        0,                          //nl port / auto (0 is kernel)
-        0,                          //seq no / auto 
-        nl->nl80211_id,             //numeric family id
-        0,                          //header length in bytes
-        0,                          //flags
-        NL80211_CMD_GET_INTERFACE,  //command
-        0                           //version
-    );
-    //struct nl_msg *msg;
-    //if (build_genlmsg(nl, msg, NL80211_CMD_GET_INTERFACE, 0) < 0) {
-    //    return -1;
-    //}
+// /*
+// *   Public:
+// */
+// int get_iftype(nl_handle *nl, int if_index) {
+//     int ret;
+//     struct nl_msg *msg = nlmsg_alloc();
+//     if (!msg) {
+//         fprintf(stderr, "Could not allocate netlink message.\n");
+//         return -1;
+//     }
+//     //Add generic netlink header to netlink message.
+//     genlmsg_put(
+//         msg,                        //nl msg object
+//         0,                          //nl port / auto (0 is kernel)
+//         0,                          //seq no / auto 
+//         nl->nl80211_id,             //numeric family id
+//         0,                          //header length in bytes
+//         0,                          //flags
+//         NL80211_CMD_GET_INTERFACE,  //command
+//         0                           //version
+//     );
+//     //struct nl_msg *msg;
+//     //if (build_genlmsg(nl, msg, NL80211_CMD_GET_INTERFACE, 0) < 0) {
+//     //    return -1;
+//     //}
 
-    //Allocate netlink callback.
-    struct nl_cb *cb = nl_cb_alloc(NL_CB_DEFAULT);
-    if (!cb) {
-        fprintf(stderr, "Could not allocate netlink callback.\n");
-        nlmsg_free(msg);
-        return -1;
-    }
+//     //Allocate netlink callback.
+//     struct nl_cb *cb = nl_cb_alloc(NL_CB_DEFAULT);
+//     if (!cb) {
+//         fprintf(stderr, "Could not allocate netlink callback.\n");
+//         nlmsg_free(msg);
+//         return -1;
+//     }
 
-    //Set custom netlink callback.
-    nl_cb_err(cb, NL_CB_CUSTOM, error_handler, &ret);
-    nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &ret);
-    nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, print_iftype_handler, NULL);
+//     //Set custom netlink callback.
+//     nl_cb_err(cb, NL_CB_CUSTOM, error_handler, &ret);
+//     nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &ret);
+//     nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, print_iftype_handler, NULL);
 
-    //Send message
-    ret = nl_send_auto(nl->sk, msg);
-    if (ret < 0) {
-        fprintf(stderr, "Bad send.\n");
-        nl_cb_put(cb);
-        return -1;
-    }
-    ret = 1;
+//     //Send message
+//     ret = nl_send_auto(nl->sk, msg);
+//     if (ret < 0) {
+//         fprintf(stderr, "Bad send.\n");
+//         nl_cb_put(cb);
+//         return -1;
+//     }
+//     ret = 1;
 
-    //Receive message (callback handles recv data)
-    while (ret > 0) {nl_recvmsgs(nl->sk, cb);}
+//     //Receive message (callback handles recv data)
+//     while (ret > 0) {nl_recvmsgs(nl->sk, cb);}
 
-    //Clean up resources.
-    nlmsg_free(msg);
-    nl_cb_put(cb);
+//     //Clean up resources.
+//     nlmsg_free(msg);
+//     nl_cb_put(cb);
 
-    return 0;
-}
+//     return 0;
+// }
 
 
 
@@ -208,9 +222,7 @@ int get_iftype(nl_handle *nl, int if_index) {
 *   -NL80211_ATTR_IFTYPE
 *   -NL80211_ATTR_IFNAME
 */
-
-int set_iftype_monitor(nl_handle *nl, int if_index) {
-    //Allocate netlink message.
+static int set_iftype(nl_handle *nl, enum nl80211_iftype type, int if_index) {
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
         fprintf(stderr, "Could not allocate netlink message.\n");
@@ -230,9 +242,26 @@ int set_iftype_monitor(nl_handle *nl, int if_index) {
     //Specify ifindex for nl80211 cmd
     nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_index);
     //Specify monitor iftype for nl80211 cmd
-    nla_put_u32(msg, NL80211_ATTR_IFTYPE, NL80211_IFTYPE_MONITOR);
-    //Sent message
-    nl_send_auto(nl->sk, msg);
+    nla_put_u32(msg, NL80211_ATTR_IFTYPE, type);
+
+    //Send message
+    int ret = nl_send_auto(nl->sk, msg);
+    if (ret < 0) {
+        fprintf(stderr, "Could not send netlink message to set iftype to monitor.\n");
+        return -1;
+    }
+
+    //Clean up
+    nlmsg_free(msg);
+    
+    return 0;
+}
+
+int set_iftype_monitor(nl_handle *nl, int if_index) {
+    enum nl80211_iftype type = NL80211_IFTYPE_MONITOR;
+    if (set_iftype(nl, type, if_index) < 0) {
+        return -1;
+    }
 
     return 0;
 }
