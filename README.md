@@ -1,5 +1,5 @@
 # mcmesh
-Use netlink and a monitor-mode capable wifi chipset to scan nearby wifi base stations on raspberry pi.
+Use netlink and a monitor-mode capable wifi chipset to scan nearby wifi traffic. Intended for use on a raspberry pi.
 
 ## Set up:
 ### Get driver for RTL8812au on RPI3B:
