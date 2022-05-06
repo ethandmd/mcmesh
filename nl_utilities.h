@@ -6,9 +6,9 @@ typedef struct {
     struct nl_sock *sk;
 } nl_handle;
 
-int nl_init(nl_handle *nl);
+void nl_init(nl_handle *nl);
 
-int nl_cleanup(nl_handle *nl);
+void nl_cleanup(nl_handle *nl);
 
 int get_ifindex(char *if_name);
 

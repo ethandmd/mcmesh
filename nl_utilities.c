@@ -19,7 +19,7 @@
 */
 
 /* See: https://git.kernel.org/pub/scm/linux/kernel/git/jberg/iw.git :: iw.c :: nl80211_init() */
-int nl_init(nl_handle *nl){
+void nl_init(nl_handle *nl){
     //First, allocate a new nl socket.
     nl->sk = nl_socket_alloc();
     if (!nl->sk) {
@@ -34,23 +34,19 @@ int nl_init(nl_handle *nl){
         fprintf(stderr, "Could not connect to generic netlink.\n");
         //Deallocate nl socket.
         nl_socket_free(nl->sk);
-        return -1;
     }
 
     //Get nl80211 interface driver id.
     nl->nl80211_id = genl_ctrl_resolve(nl->sk, "nl80211");
     if (nl->nl80211_id < 0) {
         fprintf(stderr, "Could not resolve nl80211 interface.\n");
-        return -1;
     }
-
-    return 0;
 }
 
 /*
 *   Deallocate nl socket resources.
 */
-int nl_cleanup(nl_handle *nl) {
+void nl_cleanup(nl_handle *nl) {
     nl_socket_free(nl->sk);
 }
 
@@ -132,7 +128,8 @@ struct if_info {
 };
 
 static int iftype_compare(int iftype, enum nl80211_iftype type) {
-    if (iftype == type) {
+    enum nl80211_iftype ciftype = (enum nl80211_iftype)iftype;
+    if (ciftype == type) {
         return 1;
     } else {
         return 0;
@@ -178,7 +175,7 @@ static int iftype_handler(struct nl_msg *msg, void *arg) {
 static int get_iftype(nl_handle *nl, int if_index) {
     struct if_info info;
     int ret;
-    int err;
+    //int err;
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
         fprintf(stderr, "Could not allocate netlink message.\n");
@@ -310,4 +307,5 @@ int set_iftype_managed(nl_handle *nl, int if_index) {
     if (set_iftype(nl, type, if_index) < 0) {
         return -1;
     }
+    return 0;
 }
