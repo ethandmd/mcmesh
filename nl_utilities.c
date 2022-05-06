@@ -241,7 +241,22 @@ int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index) {
     return ret;
 }
 
+/*
+* Helper function that sets the REQUIRED flags (nl80211 attrs)  
+* to a netlink message.
+*/
+int add_monitor_flags(struct nl_msg *msg) {
+    struct nl_msg *flag_msg = nlmsg_alloc();
+    if (!flag_msg) {
+        return -1;
+    }
 
+    nla_put_flag(flag_msg, NL80211_MNTR_FLAG_FCSFAIL);
+    nla_put_flag(flag_msg, NL80211_MNTR_FLAG_CONTROL);
+    nla_put_flag(flag_msg, NL80211_MNTR_FLAG_OTHER_BSS);
+
+    return nla_put_nested(msg, NL80211_ATTR_MNTR_FLAGS, flag_msg);
+}
 
 /*
 *   Set if type from userspace requires iftype and ifindex.
@@ -267,6 +282,8 @@ int handler_set_if_type(nl_handle *nl, enum nl80211_iftype *type, int if_index) 
     nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_index);
     //Specify monitor iftype for nl80211 cmd
     nla_put_u32(msg, NL80211_ATTR_IFTYPE, *type);
+    //Set monitor mode flags.
+    add_monitor_flags(msg);
 
     //Send message
     int ret = nl_send_auto(nl->sk, msg);
