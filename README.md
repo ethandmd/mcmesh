@@ -1,6 +1,11 @@
 # mcmesh
 Use netlink and a monitor-mode capable wifi chipset to scan nearby wifi traffic. Intended for use on a raspberry pi.
 
+#### Compile with: (While I redo Makefile)
+```
+$ gcc nl_utilities.c mcpcap.c sample.c -o sample $(pkg-config --cflags --libs libnl-genl-3.0)
+```
+
 ## Set up:
 ### RPI3B with Alfa wireless chipset (RTL8812au):
 #### Get driver for RTL8812au on RPI3B:
