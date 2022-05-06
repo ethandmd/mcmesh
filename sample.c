@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
     }
 
     if (get_if_info(&nl, &original_info, if_index) < 0) {
-        fprintf(stderr, "Could not retriece if information.\n");
+        fprintf(stderr, "Could not retrieve interface information.\n");
         return -1;
     }
 
@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
         return -1;
     }
     
-    if (bind_pack_socket(&skh, if_index) < 0) {
+    if (bind_pack_socket(&skh, new_if_index) < 0) {
         return -1;
     }
 
@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
         printf("\n");
     }
     
-    printf("Restoring device to managed mode.\n");
+    printf("Restoring device settings...\n");
     const char *ret_iftype = "managed";
     //set_if_type(&nl, ret_iftype, if_index, if_name);
     delete_if(&nl, new_if_index);
