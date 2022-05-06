@@ -96,11 +96,11 @@ static int ack_handler(struct nl_msg *msg, void *arg)
 /*
 *   Callback for NL_CB_FINISH.
 */
-static int finish_handler(struct nl_msg *msg, void *arg) {
-      int *ret = arg;
-      *ret = 0;
-      return NL_SKIP;
-}
+// static int finish_handler(struct nl_msg *msg, void *arg) {
+//       int *ret = arg;
+//       *ret = 0;
+//       return NL_SKIP;
+// }
 
 
 /*
