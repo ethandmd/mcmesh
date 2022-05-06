@@ -1,5 +1,6 @@
 # mcmesh
-Use netlink and a monitor-mode capable wifi chipset to scan nearby wifi traffic. Intended for use on a raspberry pi.
+Use netlink and a monitor-mode capable wifi chipset to scan nearby wifi traffic. Built on raspberry pi with an Alfa wireless chipset (RTL88xxau).
+Should work with any monitor mode capable chipset (like my laptop's intel one) that supports ```mac80211```, ```nl80211```.
 
 #### Compile with: (While I redo Makefile)
 ```
