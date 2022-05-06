@@ -16,7 +16,6 @@ int main(int argc, char** argv) {
     const char *if_name = argv[1];
     int ITER = strtol(argv[2], NULL , 10);
     int if_index = get_if_index(if_name);
-    printf("Og ifindex: %d\n", if_index);
     nl_handle nl;
     sk_handle skh;
     packet_buffer pb;
@@ -33,16 +32,16 @@ int main(int argc, char** argv) {
     }
 
     const char *new_iftype = "monitor";
-    const char *new_ifname = "mcmesh0";
+    //const char *new_ifname = "mcmesh0";
     int new_if_index;
     if (compare_if_type(original_info.iftype, new_iftype) == 0) {
         printf("Device not currently in monitor mode.\n");
-        //set_if_type(&nl, new_iftype, if_index);
-        //printf("Put device in monitor mode.\n");
+        set_if_type(&nl, new_iftype, if_index);
+        printf("Put device in monitor mode.\n");
         //delete_if(&nl, if_index);
-        create_new_if(&nl, new_iftype, original_info.wiphy, new_ifname);
-        new_if_index = get_if_index(new_ifname);
-        printf("New ifindex:%d\n", new_if_index);
+        //create_new_if(&nl, new_iftype, original_info.wiphy, new_ifname);
+        //new_if_index = get_if_index(new_ifname);
+        //printf("New ifindex:%d\n", new_if_index);
         printf("Created new monitor mode interface.\n");
     } else {
         printf("Device is already in monitor mode.\n");
@@ -53,7 +52,7 @@ int main(int argc, char** argv) {
         return -1;
     }
     
-    if (bind_pack_socket(&skh, new_if_index) < 0) {
+    if (bind_pack_socket(&skh, if_index) < 0) {
         return -1;
     }
 
