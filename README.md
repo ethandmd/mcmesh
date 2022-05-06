@@ -21,7 +21,8 @@ We need to install libnl (or in the future possibly go to libmnl, libnl tiny (Op
 
 #### Capture Goal:
 + Want to capture all nearby wireless traffic in the 2.4-5 GHz range.
-    + Delete all interfaces from net device, create a new virtual interface in monitor mode.
+    + Set interface in monitor mode.
+    + Possibly: Delete interfaces, create new interface in monitor mode.
     + Recall:
         + Monitor mode: Capture all packets in the air, not associated to AP.
         + Promiscuous mode: Capture all packets associated to AP.
@@ -31,15 +32,21 @@ We need to install libnl (or in the future possibly go to libmnl, libnl tiny (Op
 + Destroy & deallocate netlink socket: ```nl_socket_free(sk);```
 + Set socket attributes: modify callback, buffer size, auto-ack, etc...
 + Create fd & bind socket: ```genl_connect(sk);```
-+ Send messages (auto complete): ```nl_send_auto(sk, msg);```
-+ Recv messages (easy way): ```nl_recvmsgs_default(sk);```
-    + Gets CB stored in socket and calls ```nl_recvmsgs(sk, cb);```
 + Send messages:
     + Allocate msg: ```struct nl_msg *msg = nlmsg_alloc();```
+    + Set msg header: ```genlmsg_put();```
+    + Set nl attrs: ```nla_put(_xxx)();```
 + Set message callback functions with: 
     + ```nl_cb_set(struct nl_cb *cb, enum nl_cb_type type, enum nl_cb_kind kind, nl_recvmsg_cb_t func, void *arg)```
     + Error msg cb hook: ```nl_cb_err()```
-
++ Send messages (auto complete): ```nl_send_auto(sk, msg);```
++ Clean up:
+    + ```nlmsg_free(msg);```
+    + ```nl_cb_put(cb);```
++ Recv messages (easy way): ```nl_recvmsgs_default(sk);```
+    + Gets CB stored in socket and calls ```nl_recvmsgs(sk, cb);```
+    
+ 
 #### Reference
 + Netlink Protocol: [libnl developer docs](https://www.infradead.org/~tgr/libnl/doc/core.html)
 + iw (J. Berg.): [iw git repo](http://git.kernel.org/?p=linux/kernel/git/jberg/iw.git)
