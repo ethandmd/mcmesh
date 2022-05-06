@@ -9,6 +9,8 @@
 #include <arpa/inet.h>          /* htons */
 #include <net/ethernet.h>       /* L2 protocols, ETH_P_* */
 
+#include "mcpcap.h"
+
 
 /*
 *   Create socket file descriptor with:
@@ -16,30 +18,39 @@
 *       -type: raw (not packet!)
 *       -protocol: ETH_P_ALL (every packet!)
 */
-int create_pack_socket() {
-    int sockfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
-    if (sockfd < 0) {
+void create_pack_socket(sk_handle *skh) {
+    skh->sockfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    if (skh->sockfd < 0) {
         fprintf(stderr, "Unable to create packet socket.\n");
-        return -1;
     }
-    return sockfd;
 }
 
 /*
 *   Bind packet socket to interface by if_index.
 */
-int bind_pack_socket(int sockfd, int if_index) {
-    //Link layer socket data fields.
+int bind_pack_socket(sk_handle *skh, int if_index) {
+    //Link layer device independent address structure.
     struct sockaddr_ll addr = {
-        .sll_family = AF_PACKET;
-        .sll_ifindex = if_index;
-        .sll_protocol = htons(ETH_P_ALL);
+        .sll_family = AF_PACKET,
+        .sll_ifindex = if_index,
+        .sll_protocol = htons(ETH_P_ALL),
     };
 
-    if (bind(sockfd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+    if (bind(skh->sockfd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
         fprintf(stderr, "Unable to bind socket to interface.\n");
-        return -1
+        return -1;
     }
-    
+
     return 0;
+}
+
+void allocate_packet_buffer(packet_buffer *pb) {
+    pb->buffer = (void *)malloc(ETH_FRAME_LEN);
+}
+
+/*
+*   Fill buffer with binary data from socket.
+*/
+int recvpacket(sk_handle *skh, packet_buffer *pb) {
+    return recvfrom(skh->sockfd, pb->buffer, ETH_FRAME_LEN, 0, NULL, NULL);
 }

@@ -1,8 +1,20 @@
-#ifndef PCAP_H
-#define PCAP_H
+#ifndef MCPCAP_H
+#define MCPCAP_H
 
-int create_pack_socket();
+typedef struct {
+    int sockfd;
+} sk_handle;
 
-int bind_pack_socket(int sockfd, int if_index);
+typedef struct {
+    void *buffer;
+} packet_buffer;
 
-int recvpackets(int sockfd, void* buffer);
+void create_pack_socket(sk_handle *skh);
+
+int bind_pack_socket(sk_handle *skh, int if_index);
+
+void allocate_packet_buffer(packet_buffer *pb);
+
+int recvpacket(sk_handle *skh, packet_buffer *pb);
+
+#endif
