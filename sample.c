@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
         printf("Device not currently in monitor mode.\n");
         //set_if_type(&nl, new_iftype, if_index, if_name);
         //printf("Put device in monitor mode.\n");
-        delete_if(&nl, if_index);
+        //delete_if(&nl, if_index);
         create_new_if(&nl, new_iftype, info.wiphy, new_ifname);
         new_if_index = get_if_index(new_ifname);
         printf("New ifindex:%d\n", new_if_index);
@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
     const char *ret_iftype = "managed";
     //set_if_type(&nl, ret_iftype, if_index, if_name);
     //delete_if(&nl, new_if_index);
-    create_new_if(&nl, info.if_type, info.wiphy, info.if_name);
+    //create_new_if(&nl, info.if_type, info.wiphy, info.if_name);
     nl_cleanup(&nl);
 
     return 0;
