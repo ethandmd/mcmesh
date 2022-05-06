@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <net/if.h>             //if_nametoindex
+#include <sys/ioctl.h>          //ioctl
+#include <sys/socket.h>
+
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>  //genl_connect, genlmsg_put
 #include <netlink/genl/family.h>
@@ -242,6 +245,31 @@ int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index) {
 }
 
 /*
+*   Helper functions to set if down/up before changing if type.
+*   Ref. interface flags in <net/if.h>
+*/
+int set_if_flag(const char *if_name, short flags) {
+    int sockfd = socket(AF_UNIX, SOCK_RAW, 0);
+    struct ifreq ifr;
+    memset(&ifr, 0, sizeof(ifr));
+    strncpy(ifr.ifr_name, if_name, IFNAMSIZ);
+    
+    if (ioctl(sockfd, SIOCGIFFLAGS, &ifr) < 0) {
+        fprintf(stderr, "Could not get device flags.\n");
+        return -1;
+    }
+
+
+    ifr.ifr_flags = ifr.ifr_flags | flags;
+    if (ioctl(sockfd, SIOCSIFFLAGS, &ifr) < 0) {
+        printf("Could not set device flags.\n");
+        return -1;
+    }
+    printf("Successfully set if flags.\n");
+    return 0;
+}
+
+/*
 * Helper function that sets the REQUIRED flags (nl80211 attrs)  
 * to a netlink message.
 */
@@ -251,8 +279,8 @@ int add_monitor_flags(struct nl_msg *msg) {
         return -1;
     }
 
-    nla_put_flag(flag_msg, NL80211_MNTR_FLAG_FCSFAIL);
-    nla_put_flag(flag_msg, NL80211_MNTR_FLAG_CONTROL);
+    //nla_put_flag(flag_msg, NL80211_MNTR_FLAG_FCSFAIL);
+    //nla_put_flag(flag_msg, NL80211_MNTR_FLAG_CONTROL);
     nla_put_flag(flag_msg, NL80211_MNTR_FLAG_OTHER_BSS);
 
     return nla_put_nested(msg, NL80211_ATTR_MNTR_FLAGS, flag_msg);
@@ -355,6 +383,9 @@ int handler_create_new_if(nl_handle *nl, enum nl80211_iftype if_type, int wiphy,
     nla_put_u32(msg, NL80211_ATTR_WIPHY, wiphy);
     nla_put_u32(msg, NL80211_ATTR_IFTYPE, if_type);
     nla_put_string(msg, NL80211_ATTR_IFNAME, ifname);
+    if (compare_if_type(if_type, "monitor")) {
+        add_monitor_flags(msg);
+    }
     
     int ret = nl_send_auto(nl->sk, msg);
     if (ret < 0) {
@@ -391,13 +422,17 @@ int compare_if_type(int cmp_iftype, const char *base_iftype) {
     }
 }
 
-int set_if_type(nl_handle *nl, const char *iftype, int if_index) {
+int set_if_type(nl_handle *nl, const char *iftype, int if_index, const char *if_name) {
+    //Set if down
+    set_if_flag(if_name, ~IFF_UP);
     enum nl80211_iftype type = convert_iftype(iftype);
     if (type == NL80211_ATTR_MAX + 1) {
         fprintf(stderr, "Unable to ascertain valid if type.\n");
         return -1;
     }
     int ret = handler_set_if_type(nl, &type, if_index);
+    //Set if back up
+    set_if_flag(if_name, IFF_UP);
     return ret;
 }
 
