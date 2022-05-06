@@ -32,15 +32,15 @@ int main(int argc, char** argv) {
     }
 
     const char *new_iftype = "monitor";
-    //const char *new_ifname = "mcmesh0";
+    const char *new_ifname = "mcmesh0";
     int new_if_index;
     if (compare_if_type(original_info.iftype, new_iftype) == 0) {
         printf("Device not currently in monitor mode.\n");
-        set_if_type(&nl, new_iftype, if_index);
-        printf("Put device in monitor mode.\n");
+        //set_if_type(&nl, new_iftype, if_index, if_name);
+        //printf("Put device in monitor mode.\n");
         //delete_if(&nl, if_index);
-        //create_new_if(&nl, new_iftype, original_info.wiphy, new_ifname);
-        //new_if_index = get_if_index(new_ifname);
+        create_new_if(&nl, new_iftype, original_info.wiphy, new_ifname);
+        new_if_index = get_if_index(new_ifname);
         //printf("New ifindex:%d\n", new_if_index);
         printf("Created new monitor mode interface.\n");
     } else {
@@ -72,8 +72,8 @@ int main(int argc, char** argv) {
     
     printf("Restoring device to managed mode.\n");
     const char *ret_iftype = "managed";
-    //set_if_type(&nl, ret_iftype, if_index);
-    //delete_if(&nl, new_if_index);
+    //set_if_type(&nl, ret_iftype, if_index, if_name);
+    delete_if(&nl, new_if_index);
     //create_new_if(&nl, ret_iftype, original_info.wiphy, if_name);
     nl_cleanup(&nl);
 
