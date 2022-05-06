@@ -163,7 +163,7 @@ int if_info_callback(struct nl_msg *msg, void *arg) {
         info->if_name = nla_get_string(tb_msg[NL80211_ATTR_IFNAME]);
     }
     if (tb_msg[NL80211_ATTR_IFINDEX]) {
-        info->if_index = (enum nl80211_iftype)nla_get_u32(tb_msg[NL80211_ATTR_IFNAME]);
+        info->if_index = (enum nl80211_iftype)nla_get_u32(tb_msg[NL80211_ATTR_IFINDEX]);
     }
     if (tb_msg[NL80211_ATTR_WDEV]) {
         info->wdev = nla_get_u64(tb_msg[NL80211_ATTR_WDEV]);
