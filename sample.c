@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
     printf("Restoring device to managed mode.\n");
     const char *ret_iftype = "managed";
     //set_if_type(&nl, ret_iftype, if_index);
-    delete_if(&nl, new_if_index);
+    //delete_if(&nl, new_if_index);
     //create_new_if(&nl, ret_iftype, original_info.wiphy, if_name);
     nl_cleanup(&nl);
 
