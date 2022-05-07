@@ -15,7 +15,7 @@
 
 
 void print_if_info(struct if_info *info) {
-    printf("%sInterface:\n", info->if_name);
+    printf("Interface: %s\n", info->if_name);
     printf("\tIFINDEX: %d\n", info->if_index);
     printf("\tWDEV: %d\n", info->wdev);
     printf("\tWIPHY: %d\n", info->wiphy);
