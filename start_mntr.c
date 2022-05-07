@@ -2,6 +2,7 @@
 #include "mcpcap.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <linux/if_ether.h>     /* ethhdr */
 
 
@@ -14,7 +15,7 @@
 
 
 void print_if_info(struct if_info *info) {
-    printf("%s:\n", info->if_name);
+    printf("%sInterface:\n", info->if_name);
     printf("\tIFINDEX: %d\n", info->if_index);
     printf("\tWDEV: %d\n", info->wdev);
     printf("\tWIPHY: %d\n", info->wiphy);
@@ -66,11 +67,12 @@ int set_up_mntr_if(nl_handle *nl, struct if_info *v_info) {
         p_info.phy_id = phyid;
         break;
     }
-    printf("Turning off interfaces on phy%d\n", p_info.phy_id);
-    get_if_info(nl, NULL, -1, p_info.phy_id);
+    printf("Turning off interfaces on phy%d...\n", p_info.phy_id);
+    struct if_info tmp;
+    get_if_info(nl, &tmp, -1, p_info.phy_id);
 
     const char *mntr_iftype = "monitor";
-    const char *mntr_ifname = strcat("mcmon", sprintf(p_info.phy_name, %d, p_info.phy_id));
+    const char *mntr_ifname = "mcmon";
     if (start_mntr_if(nl, v_info, mntr_iftype, p_info.phy_id, mntr_ifname) < 0) {
         fprintf(stderr, "Could not start new monitor interface on phy%d.\n", p_info.phy_id);
         return -1;
@@ -99,7 +101,8 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    printf("Setting up new virtual monitor mode interface...\n");
+    printf("Starting set up of a new virtual monitor mode interface...\n");
+    printf("\n");
     if (set_up_mntr_if(&nl, &v_info) < 0) {
         fprintf(stderr, "Aborting...\n");
         return -1;
