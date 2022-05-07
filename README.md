@@ -23,7 +23,7 @@ Most linux distributions have libnl via their respective package managers.
 ```
 $ sudo apt-get install libnl-genl-3-dev
 ```
-+ Example (Fedora 25):
++ Example (Fedora 35):
 ```
 $ sudo dnf install libnl3-devel
 ```
@@ -33,6 +33,8 @@ $ sudo dnf install libnl3-devel
 #### Reference
 + Libnl: [Libnl developer docs](https://www.infradead.org/~tgr/libnl/doc/core.html)
 + iw (J. Berg.): [iw git repo](http://git.kernel.org/?p=linux/kernel/git/jberg/iw.git)
++ Libpcap nl80211 examples: [pcap-linux](https://github.com/the-tcpdump-group/libpcap/blob/master/pcap-linux.c)
++ Link layer headers from [libpcap](https://www.tcpdump.org/linktypes.html)
 + Netlink: [RFC 3549](https://datatracker.ietf.org/doc/html/rfc3549) 
 + Driver for Alfa wireless chipset (RTL8812au) for RPI3 from aircrack-ng:
 ```
