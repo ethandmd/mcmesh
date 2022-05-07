@@ -164,6 +164,7 @@ static int callback_if_info(struct nl_msg *msg, void *arg) {
     }
     if (tb_msg[NL80211_ATTR_IFINDEX]) {
         info->if_index = (enum nl80211_iftype)nla_get_u32(tb_msg[NL80211_ATTR_IFINDEX]);
+        printf("Found ifindex: %d\n", info->if_index);
     }
     if (tb_msg[NL80211_ATTR_WDEV]) {
         info->wdev = nla_get_u64(tb_msg[NL80211_ATTR_WDEV]);
@@ -179,14 +180,17 @@ static int callback_if_info(struct nl_msg *msg, void *arg) {
 }
 
 /*
-*   Send GET_INTERFACE cmd, specifying if_index, and use custom callback
-*   to filter the resulting stream of attributes for the iftype. Then
-*   call a helper function that compares the found type against the desired type.
+*   Send GET_INTERFACE cmd, specifying if_index or phy_id for dump of all interfaces on a wiphy, 
+*   and use custom callback to filter the resulting stream of attributes for the iftype.
 */
 
-static int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index) {
+static int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index, int phy_id) {
     int ret;
-    //int err;
+    int err;
+    int nl_flag = 0;
+    if (if_index < 0 && phy_id) {
+        nl_flag = NLM_F_DUMP;
+    }
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
         fprintf(stderr, "Could not allocate netlink message.\n");
@@ -216,8 +220,13 @@ static int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index
         return -1;
     }
 
-    //Specify results for if_index
-    nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_index);
+    //Specify results for if_index or phy.
+    if (if_index < 0 && phy_id) {
+        //If phy, this is a dump request!
+        nla_put_u32(msg, NL80211_ATTR_WIPHY, phy_id);
+    } else {
+        nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_index);
+    }
 
     //Send message
     ret = nl_send_auto(nl->sk, msg);
@@ -231,7 +240,9 @@ static int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index
     //Set custom netlink callback.
     nl_cb_err(cb, NL_CB_CUSTOM, error_handler, &ret);
     nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &ret);
-    //nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &err);
+    if (if_index < 0 && phy_id) {
+        nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &err);
+    }
     nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, callback_if_info, info);
     
     //Receive message (callback handles recv data)
@@ -267,8 +278,9 @@ static int callback_phy_info(struct nl_msg *msg, void *arg) {
 
     if (tb_msg[NL80211_ATTR_WIPHY]) {
         if (nla_get_u32(tb_msg[NL80211_ATTR_WIPHY])) {
-            info->phy_id = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY]);
-            info->phy_name = nla_get_string(tb_msg[NL80211_ATTR_WIPHY_NAME]);
+            //info->phy_id = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY]);
+            //info->phy_name = nla_get_string(tb_msg[NL80211_ATTR_WIPHY_NAME]);
+            printf("Line 272, phy name: %s\n", info->phy_name);
         }
     }
 
@@ -308,9 +320,9 @@ static int callback_phy_info(struct nl_msg *msg, void *arg) {
 
 int handler_get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id, int mon){
     int nl_flag = 0;
-    if (phy_id < 0) {
-        nl_flag = NLM_F_DUMP;
-    }
+    // if (phy_id < 0) {
+    //     nl_flag = NLM_F_DUMP;
+    // }
     int ret;
     //int err;
     struct nl_msg *msg = nlmsg_alloc();
@@ -342,7 +354,7 @@ int handler_get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id, int m
     if (!nl_flag) {
         nla_put_u32(msg, NL80211_ATTR_WIPHY, phy_id);
     }
-    
+
     //Send message
     ret = nl_send_auto(nl->sk, msg);
     if (ret < 0) {
@@ -356,12 +368,14 @@ int handler_get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id, int m
     int err;
     nl_cb_err(cb, NL_CB_CUSTOM, error_handler, &ret);
     nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &ret);
-    if (nl_flag == NLM_F_DUMP) {
-        nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &err);
-    }
+    // if (nl_flag) {
+    //     printf("Setting phy dump callback...\n");
+    //     nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &err);
+    // }
     nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, callback_phy_info, info);
     
     //Receive message (callback handles recv data)
+    
     while (ret > 0) {
         nl_recvmsgs(nl->sk, cb);
     }
@@ -386,12 +400,16 @@ int handler_get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id, int m
     return ret;
 }
 
+int get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id, int mon) {
+    return handler_get_phy_info(nl, info, phy_id, mon);
+}
+
 
 /*
  *   Fill the data fields of struct info with results.
 */
-int get_if_info(nl_handle *nl, struct if_info *info, int if_index) {
-    int ret = handler_get_if_info(nl, info, if_index);
+int get_if_info(nl_handle *nl, struct if_info *info, int if_index, int phy_id) {
+    int ret = handler_get_if_info(nl, info, if_index, phy_id);
     return ret;
 }
 
