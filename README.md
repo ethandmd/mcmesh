@@ -19,9 +19,13 @@ $ sudo ./start_mntr {number of packets to capture}
 We need to install [libnl](https://www.infradead.org/~tgr/libnl/) with headers for dev (or in the future possibly go to libmnl, libnl tiny (OpenWRT)) in order to use the ```nl80211.h``` enums.
 Most linux distributions have libnl via their respective package managers.
 
-+ Example:
++ Example (Ubuntu 21.04):
 ```
 $ sudo apt-get install libnl-genl-3-dev
+```
++ Example (Fedora 25):
+```
+$ sudo dnf install libnl3-devel
 ```
 
     
