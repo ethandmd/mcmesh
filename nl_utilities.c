@@ -93,16 +93,16 @@ static int ack_handler(struct nl_msg *msg, void *arg)
 /*
 *   Callback for NL_CB_FINISH.
 */
-// static int finish_handler(struct nl_msg *msg, void *arg) {
-//       int *ret = arg;
-//       *ret = 0;
-//       return NL_SKIP;
-// }
+static int finish_handler(struct nl_msg *msg, void *arg) {
+      int *ret = arg;
+      *ret = 0;
+      return NL_SKIP;
+}
 
 /*
 *   Convert char* to nl80211 enum type.
 */
-enum nl80211_iftype convert_iftype(const char *base_iftype) {
+static enum nl80211_iftype convert_iftype(const char *base_iftype) {
     if (strcmp(base_iftype, "monitor") == 0) {
         return NL80211_IFTYPE_MONITOR;
     } else if (strcmp(base_iftype, "managed") == 0) {
@@ -145,7 +145,7 @@ enum nl80211_iftype convert_iftype(const char *base_iftype) {
 *   by index type. The maxtype is for backwards compatibility. This is a moment
 *   where I miss how simple ioctl() is, yet can appreciate nl80211.
 */
-int if_info_callback(struct nl_msg *msg, void *arg) {
+static int callback_if_info(struct nl_msg *msg, void *arg) {
     struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
     struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];    //Highest attr num currently defined +1.
     struct if_info *info = arg;
@@ -184,7 +184,7 @@ int if_info_callback(struct nl_msg *msg, void *arg) {
 *   call a helper function that compares the found type against the desired type.
 */
 
-int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index) {
+static int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index) {
     int ret;
     //int err;
     struct nl_msg *msg = nlmsg_alloc();
@@ -232,7 +232,7 @@ int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index) {
     nl_cb_err(cb, NL_CB_CUSTOM, error_handler, &ret);
     nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &ret);
     //nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &err);
-    nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, if_info_callback, info);
+    nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, callback_if_info, info);
     
     //Receive message (callback handles recv data)
     while (ret > 0) {
@@ -251,7 +251,144 @@ int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index) {
 }
 
 /*
-*   Fill the data fields of struct info with results.
+ *  Phy info -- find supported interface modes.
+ *  
+*/
+static int callback_phy_info(struct nl_msg *msg, void *arg) {
+    struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];
+    struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+    struct nlattr *nl_mode;
+    struct nlattr *nl_cmd;
+    struct phy_info *info = arg; 
+    int rem_mode;
+    int rem_cmd;
+
+    nla_parse(tb_msg, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
+
+    if (tb_msg[NL80211_ATTR_WIPHY]) {
+        if (nla_get_u32(tb_msg[NL80211_ATTR_WIPHY])) {
+            info->phy_id = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY]);
+            info->phy_name = nla_get_string(tb_msg[NL80211_ATTR_WIPHY_NAME]);
+        }
+    }
+
+    if (tb_msg[NL80211_ATTR_SUPPORTED_IFTYPES]) {
+        info->hard_mon = 0;
+        nla_for_each_nested(nl_mode, tb_msg[NL80211_ATTR_SUPPORTED_IFTYPES], rem_mode) {
+            if (nla_type(nl_mode) == NL80211_IFTYPE_MONITOR) {
+                info->hard_mon = 1;
+            }
+        }
+    }
+
+    if (tb_msg[NL80211_ATTR_SOFTWARE_IFTYPES]) {
+        info->hard_mon = 0;
+        nla_for_each_nested(nl_mode, tb_msg[NL80211_ATTR_SOFTWARE_IFTYPES], rem_mode) {
+            if (nla_type(nl_mode) == NL80211_IFTYPE_MONITOR) {
+                info->soft_mon = 1;
+            }
+        }
+    }
+
+    if (tb_msg[NL80211_ATTR_SUPPORTED_COMMANDS]) {
+        info->new_if = 0;
+        info->set_if = 0;
+        nla_for_each_nested(nl_cmd, tb_msg[NL80211_ATTR_SUPPORTED_COMMANDS], rem_cmd) {
+            if (nla_get_u32(nl_cmd) == NL80211_CMD_NEW_INTERFACE) {
+                info->new_if = 1;
+            }
+            if (nla_get_u32(nl_cmd) == NL80211_CMD_SET_INTERFACE) {
+                info->set_if = 1;
+            }
+        }
+    }
+
+    return NL_SKIP;
+}
+
+int handler_get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id, int mon){
+    int nl_flag = 0;
+    if (phy_id < 0) {
+        nl_flag = NLM_F_DUMP;
+    }
+    int ret;
+    //int err;
+    struct nl_msg *msg = nlmsg_alloc();
+    if (!msg) {
+        fprintf(stderr, "Could not allocate netlink message for phy info.\n");
+        return -1;
+    }
+    //Add generic netlink header to netlink message.
+    genlmsg_put(
+        msg,                        //nl msg object
+        0,                          //nl port / auto (0 is kernel)
+        0,                          //seq no / auto 
+        nl->nl80211_id,             //numeric family id
+        0,                          //header length in bytes
+        nl_flag,                    //flags
+        NL80211_CMD_GET_WIPHY,      //command
+        0                           //version
+    );
+
+    //Allocate netlink callback.
+    struct nl_cb *cb = nl_cb_alloc(NL_CB_DEFAULT);
+    if (!cb) {
+        fprintf(stderr, "Could not allocate netlink callback for phy info.\n");
+        nlmsg_free(msg);
+        return -1;
+    }
+
+    //Specify results for if_index
+    if (!nl_flag) {
+        nla_put_u32(msg, NL80211_ATTR_WIPHY, phy_id);
+    }
+    
+    //Send message
+    ret = nl_send_auto(nl->sk, msg);
+    if (ret < 0) {
+        fprintf(stderr, "Could not send netlink message to get phy info.\n");
+        nl_cb_put(cb);
+        return -1;
+    }
+    ret = 1;
+
+    //Set custom netlink callback.
+    int err;
+    nl_cb_err(cb, NL_CB_CUSTOM, error_handler, &ret);
+    nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &ret);
+    if (nl_flag == NLM_F_DUMP) {
+        nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &err);
+    }
+    nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, callback_phy_info, info);
+    
+    //Receive message (callback handles recv data)
+    while (ret > 0) {
+        nl_recvmsgs(nl->sk, cb);
+    }
+
+    //If phy has what we want, take it and run.
+    if (mon) {
+        if (info->hard_mon || info->soft_mon == 1) {
+            nlmsg_free(msg);
+            nl_cb_put(cb);
+            return 0;
+        }
+    }
+
+    // if (ret == 0) {
+    //     ret = info->iftype;
+    //}
+
+    //Clean up resources.
+    nlmsg_free(msg);
+    nl_cb_put(cb);
+
+    return ret;
+}
+
+
+/*
+ *   Fill the data fields of struct info with results.
 */
 int get_if_info(nl_handle *nl, struct if_info *info, int if_index) {
     int ret = handler_get_if_info(nl, info, if_index);
@@ -325,7 +462,7 @@ int set_if_down(const char *if_name) {
 * Helper function that sets the REQUIRED flags (nl80211 attrs)  
 * to a netlink message.
 */
-int add_monitor_flags(struct nl_msg *msg) {
+static int add_monitor_flags(struct nl_msg *msg) {
     struct nl_msg *flag_msg = nlmsg_alloc();
     if (!flag_msg) {
         return -1;
@@ -382,7 +519,7 @@ int add_monitor_flags(struct nl_msg *msg) {
 /*
 *   Delete if from userspace only requires if index.
 */
-int handler_delete_if(nl_handle *nl, int if_index) {
+static int handler_delete_if(nl_handle *nl, int if_index) {
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
         fprintf(stderr, "Could not allovate netlink message.\n");
@@ -418,7 +555,7 @@ int handler_delete_if(nl_handle *nl, int if_index) {
 *   -NL80211_ATTR_IFTYPE
 *   -NL80211_ATTR_IFNAME
 */
-int handler_create_new_if(nl_handle *nl, enum nl80211_iftype if_type, int wiphy, const char *ifname) {
+static int handler_create_new_if(nl_handle *nl, enum nl80211_iftype if_type, int wiphy, const char *ifname) {
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
         fprintf(stderr, "Could not allovate netlink message.\n");
@@ -464,11 +601,9 @@ int delete_if(nl_handle *nl, int if_index) {
 /*
 *   Create interface by name, wiphy, type (+ flags for monitor mode).
 */
-int create_new_if(nl_handle *nl, const char *iftype, int wiphy, const char *ifname, const char *old_ifname) {
-    enum nl80211_iftype if_type = convert_iftype(iftype);
+int create_new_if(nl_handle *nl, const char *if_type, int wiphy, const char *if_name) {
+    enum nl80211_iftype type = convert_iftype(if_type);
     //enum nl80211_attrs wiphy_type = (enum nl80211_attrs)wiphy;
-    set_if_down(old_ifname);
-    int ret = handler_create_new_if(nl, if_type, wiphy, ifname);
-    set_if_up(ifname);
+    int ret = handler_create_new_if(nl, type, wiphy, if_name);
     return ret;
 }
