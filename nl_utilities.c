@@ -454,7 +454,7 @@ int set_if_up(const char *if_name) {
         printf("Could not set device flags.\n");
         return -1;
     }
-    printf("Successfully set device flags.\n");
+    printf("Successfully set interface up.\n");
     return 0;
 }
 
@@ -475,15 +475,18 @@ int set_if_down(const char *if_name) {
         printf("Could not set device flags.\n");
         return -1;
     }
-    printf("Successfully set device flags.\n");
+    printf("Successfully set interface down.\n");
     return 0;
 }
 
 /*
-* Helper function that sets the REQUIRED flags (nl80211 attrs)  
-* to a netlink message.
+ * TODO:
+ * Parse mntr flags to add parametrization of which flags to set.
+ * Helper function that sets the REQUIRED flags (nl80211 attrs)  
+ * to a netlink message.
 */
 static int add_monitor_flags(struct nl_msg *msg) {
+    printf("Adding monitor flags...\n\t(none)\n");
     struct nl_msg *flag_msg = nlmsg_alloc();
     if (!flag_msg) {
         return -1;
@@ -596,7 +599,6 @@ static int handler_create_new_if(nl_handle *nl, enum nl80211_iftype if_type, int
     nla_put_string(msg, NL80211_ATTR_IFNAME, ifname);
     nla_put_u32(msg, NL80211_ATTR_IFTYPE, if_type);
     if (compare_if_type(if_type, "monitor")) {
-        printf("Adding monitor flags...\n");
         add_monitor_flags(msg);
     }
     

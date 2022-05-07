@@ -79,9 +79,6 @@ int set_up_mntr_if(nl_handle *nl, struct if_info *v_info) {
     }
 }
 
-
-
-
 int main(int argc, char** argv) {
 
     nl_handle nl;
