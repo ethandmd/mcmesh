@@ -11,13 +11,41 @@
 *   Example test:
 *   $ sudo ./sample wlan1 1000
 */
+void print_if_info(struct if_info *info) {
+    printf("%s:\n", info->if_name);
+    printf("\tIFINDEX: %d\n", info->if_index);
+    printf("\tWDEV: %d\n", info->wdev);
+    printf("\tWIPHY: %d\n", info->wiphy);
+    printf("\tIFTYPE: %d\n", info->if_type);
+    printf("\n");
+}
+
+int start_monitor(nl_handle *nl, struct if_info *info, const char *if_type, int wiphy, const char *if_name) {
+    if (create_new_if(nl, if_type, wiphy, if_name) < 0 ) {
+        fprintf(stderr, "Could not create %s interface.\n", if_name);
+        return -1;
+    }
+    if (set_if_up(if_name) < 0) {
+        fprintf(stderr, "Could not set %s up.\n", if_name);
+        return -1;
+    }
+    int if_index = get_if_index(if_name);
+    if (get_if_info(nl, info, if_index) < 0) {
+        fprintf(stderr, "Could not retrieve %s information.\n", if_name);
+        return -1;
+    }
+    return 0;
+}
+
+
 
 int main(int argc, char** argv) {
 
     nl_handle nl;
     sk_handle skh;
     packet_buffer pb;
-    struct if_info info = {0};
+    struct if_info info;
+    struct if_info v_info;
     info.if_name = argv[1];
     int ITER = strtol(argv[2], NULL , 10);
     int if_index = get_if_index(info.if_name);
@@ -31,25 +59,19 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Could not retrieve interface information.\n");
         return -1;
     }
-    printf("Given interface info:\n");
-    printf("\tIFNAME: %s\n", info.if_name);
-    printf("\tIFINDEX: %d\n", info.if_index);
-    printf("\tWDEV: %d\n", info.wdev);
-    printf("\tWIPHY: %d\n", info.wiphy);
-    printf("\tIFTYPE: %d\n", info.if_type);
-    printf("\n");
+    print_if_info(&info);
 
     const char *new_iftype = "monitor";
     const char *new_ifname = "mcmesh0";
     int bind_if_index;
     if (compare_if_type(info.if_type, new_iftype) == 0) {
-        //printf("Device not currently in monitor mode.\n");
-        //set_if_type(&nl, new_iftype, info.if_index, info.if_name);
-        //printf("Put device in monitor mode.\n");
-        //delete_if(&nl, if_index);
-        create_new_if(&nl, new_iftype, info.wiphy, new_ifname, info.if_name);
-        bind_if_index = get_if_index(new_ifname);
+        printf("Device not currently in monitor mode.\n");
+         if (start_monitor(&nl, &v_info, new_iftype, info.wiphy, new_ifname) < 0) {
+             fprintf(stderr, "Could not create new monitor mode interface.\n");
+         }
         printf("Created new monitor mode interface.\n");
+        bind_if_index = get_if_index(new_ifname);
+        printf("New if index: %d\n", bind_if_index);
     } else {
         bind_if_index = info.if_index;
         printf("Device is already in monitor mode.\n");
