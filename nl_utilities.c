@@ -251,26 +251,68 @@ int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index) {
 }
 
 /*
+*   Fill the data fields of struct info with results.
+*/
+int get_if_info(nl_handle *nl, struct if_info *info, int if_index) {
+    int ret = handler_get_if_info(nl, info, if_index);
+    return ret;
+}
+
+/*
+*   Given two strings, compare their 
+*/
+int compare_if_type(int cmp_iftype, const char *base_iftype) {
+    enum nl80211_iftype ct = (enum nl80211_iftype)cmp_iftype;
+    enum nl80211_iftype bt = convert_iftype(base_iftype);
+    if (bt == NL80211_ATTR_MAX + 1) {
+        fprintf(stderr, "Unable to ascertain valid if type.\n");
+        return -1;
+    }
+    if (ct == bt) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+/*
 *   Helper functions to set if down/up before changing if type.
 *   Ref. interface flags in <net/if.h>
 */
-int set_if_up(const char *if_name, short up_down) {
+int set_if_up(const char *if_name) {
     int sockfd = socket(AF_UNIX, SOCK_RAW, 0);
     struct ifreq ifr;
     memset(&ifr, 0, sizeof(ifr));
     strncpy(ifr.ifr_name, if_name, IFNAMSIZ);
     
-    if (ioctl(sockfd, SIOCGIFFLAGS, &ifr) < 0) {
-        fprintf(stderr, "Could not get device flags.\n");
+    // if (ioctl(sockfd, SIOCGIFFLAGS, &ifr) < 0) {
+    //     fprintf(stderr, "Could not get device flags.\n");
+    //     return -1;
+    // }
+
+    ifr.ifr_flags |= IFF_UP;
+    
+    if (ioctl(sockfd, SIOCSIFFLAGS, &ifr) < 0) {
+        printf("Could not set device flags.\n");
         return -1;
     }
+    printf("Successfully set device flags.\n");
+    return 0;
+}
 
-    if (up_down) {
-        ifr.ifr_flags = ifr.ifr_flags | IFF_UP;
-    } else {
-        ifr.ifr_flags = ifr.ifr_flags & ~IFF_UP;
-    }
+int set_if_down(const char *if_name) {
+    int sockfd = socket(AF_UNIX, SOCK_RAW, 0);
+    struct ifreq ifr;
+    memset(&ifr, 0, sizeof(ifr));
+    strncpy(ifr.ifr_name, if_name, IFNAMSIZ);
+    
+    // if (ioctl(sockfd, SIOCGIFFLAGS, &ifr) < 0) {
+    //     fprintf(stderr, "Could not get device flags.\n");
+    //     return -1;
+    // }
 
+    ifr.ifr_flags &= ~IFF_UP;
+    
     if (ioctl(sockfd, SIOCSIFFLAGS, &ifr) < 0) {
         printf("Could not set device flags.\n");
         return -1;
@@ -290,8 +332,8 @@ int add_monitor_flags(struct nl_msg *msg) {
     }
 
     //nla_put_flag(flag_msg, NL80211_MNTR_FLAG_FCSFAIL);
-    nla_put_flag(flag_msg, NL80211_MNTR_FLAG_CONTROL);
-    nla_put_flag(flag_msg, NL80211_MNTR_FLAG_OTHER_BSS);
+    //nla_put_flag(flag_msg, NL80211_MNTR_FLAG_CONTROL);
+    //nla_put_flag(flag_msg, NL80211_MNTR_FLAG_OTHER_BSS);
 
     return nla_put_nested(msg, NL80211_ATTR_MNTR_FLAGS, flag_msg);
 }
@@ -299,43 +341,43 @@ int add_monitor_flags(struct nl_msg *msg) {
 /*
 *   Set if type from userspace requires iftype and ifindex.
 */
-int handler_set_if_type(nl_handle *nl, enum nl80211_iftype *type, int if_index) {
-    struct nl_msg *msg = nlmsg_alloc();
-    if (!msg) {
-        fprintf(stderr, "Could not allocate netlink message.\n");
-        return -1;
-    }
-    //Add generic netlink header to netlink message.
-    genlmsg_put(
-        msg,                        //nl msg object
-        0,                          //nl port / auto (0 is kernel)
-        0,                          //seq no / auto 
-        nl->nl80211_id,             //numeric family id
-        0,                          //header length in bytes
-        0,                          //flags
-        NL80211_CMD_SET_INTERFACE,  //command
-        0                           //version
-    );
-    //Specify ifindex for nl80211 cmd
-    nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_index);
-    //Specify monitor iftype for nl80211 cmd
-    nla_put_u32(msg, NL80211_ATTR_IFTYPE, *type);
-    //Set monitor mode flags.
-    add_monitor_flags(msg);
+// int handler_set_if_type(nl_handle *nl, enum nl80211_iftype *type, int if_index) {
+//     struct nl_msg *msg = nlmsg_alloc();
+//     if (!msg) {
+//         fprintf(stderr, "Could not allocate netlink message.\n");
+//         return -1;
+//     }
+//     //Add generic netlink header to netlink message.
+//     genlmsg_put(
+//         msg,                        //nl msg object
+//         0,                          //nl port / auto (0 is kernel)
+//         0,                          //seq no / auto 
+//         nl->nl80211_id,             //numeric family id
+//         0,                          //header length in bytes
+//         0,                          //flags
+//         NL80211_CMD_SET_INTERFACE,  //command
+//         0                           //version
+//     );
+//     //Specify ifindex for nl80211 cmd
+//     nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_index);
+//     //Specify monitor iftype for nl80211 cmd
+//     nla_put_u32(msg, NL80211_ATTR_IFTYPE, *type);
+//     //Set monitor mode flags.
+//     add_monitor_flags(msg);
 
-    //Send message
-    int ret = nl_send_auto(nl->sk, msg);
-    if (ret < 0) {
-        fprintf(stderr, "Could not send netlink message to set iftype to monitor.\n");
-        nlmsg_free(msg);
-        return -1;
-    }
+//     //Send message
+//     int ret = nl_send_auto(nl->sk, msg);
+//     if (ret < 0) {
+//         fprintf(stderr, "Could not send netlink message to set iftype to monitor.\n");
+//         nlmsg_free(msg);
+//         return -1;
+//     }
 
-    //Clean up
-    nlmsg_free(msg);
+//     //Clean up
+//     nlmsg_free(msg);
     
-    return 0;
-}
+//     return 0;
+// }
 
 /*
 *   Delete if from userspace only requires if index.
@@ -356,7 +398,9 @@ int handler_delete_if(nl_handle *nl, int if_index) {
         NL80211_CMD_DEL_INTERFACE,
         0
     );
+
     nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_index);
+
     int ret = nl_send_auto(nl->sk, msg);
     if (ret < 0) {
         fprintf(stderr, "Could not send netlink message to del if.\n");
@@ -409,52 +453,22 @@ int handler_create_new_if(nl_handle *nl, enum nl80211_iftype if_type, int wiphy,
 }
 
 /*
-*   Fill the data fields of struct info with results.
+*   Delete interface by if index.
 */
-int get_if_info(nl_handle *nl, struct if_info *info, int if_index) {
-    int ret = handler_get_if_info(nl, info, if_index);
-    return ret;
-}
-
-/*
-*   Given two strings, compare their 
-*/
-int compare_if_type(int cmp_iftype, const char *base_iftype) {
-    enum nl80211_iftype ct = (enum nl80211_iftype)cmp_iftype;
-    enum nl80211_iftype bt = convert_iftype(base_iftype);
-    if (bt == NL80211_ATTR_MAX + 1) {
-        fprintf(stderr, "Unable to ascertain valid if type.\n");
-        return -1;
-    }
-    if (ct == bt) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
-int set_if_type(nl_handle *nl, const char *iftype, int if_index, const char *if_name) {
-    //Set if down
-    set_if_up(if_name, 0);
-    enum nl80211_iftype type = convert_iftype(iftype);
-    if (type == NL80211_ATTR_MAX + 1) {
-        fprintf(stderr, "Unable to ascertain valid if type.\n");
-        return -1;
-    }
-    int ret = handler_set_if_type(nl, &type, if_index);
-    //Set if back up
-    set_if_up(if_name, 1);
-    return ret;
-}
-
 int delete_if(nl_handle *nl, int if_index) {
     int ret = handler_delete_if(nl, if_index);
     return ret;
 }
 
-int create_new_if(nl_handle *nl, const char *iftype, int wiphy, const char *ifname) {
+
+/*
+*   Create interface by name, wiphy, type (+ flags for monitor mode).
+*/
+int create_new_if(nl_handle *nl, const char *iftype, int wiphy, const char *ifname, const char *old_ifname) {
     enum nl80211_iftype if_type = convert_iftype(iftype);
     //enum nl80211_attrs wiphy_type = (enum nl80211_attrs)wiphy;
+    set_if_down(old_ifname);
     int ret = handler_create_new_if(nl, if_type, wiphy, ifname);
+    set_if_up(ifname);
     return ret;
 }

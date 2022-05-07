@@ -28,6 +28,6 @@ int set_if_type(nl_handle *nl, const char *iftype, int if_index, const char *if_
 
 int delete_if(nl_handle *nl, int if_index);
 
-int create_new_if(nl_handle *nl, const char *iftype, int wiphy, const char *ifname);
+int create_new_if(nl_handle *nl, const char *iftype, int wiphy, const char *ifname, const char *old_ifname);
 
 #endif
