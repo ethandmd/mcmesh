@@ -5,21 +5,13 @@ To run this program you will need:
 - A wifi chipset that:
     - has a driver which can support nl80211 [drivers](https://wireless.wiki.kernel.org/en/users/drivers).
     - is capable of supporting a monitor mode interface (this program can detect if you have one or not).
-- The following 
+- [Dependencies](#Install-Dependencies)
 
 
 ## Build & Run:
 ```
 $ gcc nl_utilities.c mcpcap.c start_mntr.c -o start_mntr $(pkg-config --cflags --libs libnl-genl-3.0)
 $ sudo ./start_mntr {number of packets to capture}
-```
-
-Use netlink and a monitor-mode capable wifi chipset to scan nearby wifi traffic. Built on raspberry pi with an Alfa wireless chipset (RTL88xxau).
-Should work with any monitor mode capable chipset (like my laptop's intel one) that supports ```mac80211```, ```nl80211```.
-
-#### Compile with: (While I redo Makefile)
-```
-$ gcc nl_utilities.c mcpcap.c sample.c -o sample $(pkg-config --cflags --libs libnl-genl-3.0)
 ```
 
 ## Set up:
@@ -33,7 +25,7 @@ $ sudo apt-get install raspberrypi-kernel-headers
 $ make && sudo make install   #then reboot
 ```
 
-### Get netlink
+### Install-Dependencies
 #### RPI3B:
 ```
 $ sudo apt-get install libnl-genl-3-dev
