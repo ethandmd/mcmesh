@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Could not retrieve interface information.\n");
         return -1;
     }
-    printf("Given device interface info:\n");
+    printf("Given interface info:\n");
     printf("\tIFNAME: %s\n", info.if_name);
     printf("\tIFINDEX: %d\n", info.if_index);
     printf("\tWDEV: %d\n", info.wdev);
@@ -41,19 +41,33 @@ int main(int argc, char** argv) {
 
     const char *new_iftype = "monitor";
     const char *new_ifname = "mcmesh0";
-    int bind_if_index = if_index;
+    int bind_if_index;
     if (compare_if_type(info.if_type, new_iftype) == 0) {
         //printf("Device not currently in monitor mode.\n");
         //set_if_type(&nl, new_iftype, info.if_index, info.if_name);
         //printf("Put device in monitor mode.\n");
         //delete_if(&nl, if_index);
-        create_new_if(&nl, new_iftype, info.wiphy, new_ifname);
+        create_new_if(&nl, new_iftype, info.wiphy, new_ifname, info.if_name);
         bind_if_index = get_if_index(new_ifname);
         printf("Created new monitor mode interface.\n");
     } else {
+        bind_if_index = info.if_index;
         printf("Device is already in monitor mode.\n");
     }
     printf("\n");
+
+    struct if_info vinfo;
+    if (get_if_info(&nl, &vinfo, bind_if_index) < 0) {
+        fprintf(stderr, "Newly created virtual interface is not fuctioning.");
+        return 0;
+    }
+    printf("New virtual interface info:\n");
+    printf("\tIFNAME: %s\n", vinfo.if_name);
+    printf("\tIFINDEX: %d\n", vinfo.if_index);
+    printf("\tWDEV: %d\n", vinfo.wdev);
+    printf("\tWIPHY: %d\n", vinfo.wiphy);
+    printf("\tIFTYPE: %d\n", vinfo.if_type);
+    printf("\n");   
 
     create_pack_socket(&skh);
     if (skh.sockfd < 0) {
@@ -78,7 +92,7 @@ int main(int argc, char** argv) {
         printf("\n");
     }
     
-    printf("Restoring device settings...\n");
+    printf("Removing created virtual interface...\n");
     const char *ret_iftype = "managed";
     //set_if_type(&nl, ret_iftype, if_index, if_name);
     delete_if(&nl, bind_if_index);
