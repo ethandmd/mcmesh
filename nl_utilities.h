@@ -8,7 +8,7 @@ typedef struct {
 
 struct phy_info {
     int phy_id;
-    const char *phy_name;
+    char *phy_name;
     int hard_mon;
     int soft_mon;
     int new_if;

@@ -164,7 +164,6 @@ static int callback_if_info(struct nl_msg *msg, void *arg) {
     }
     if (tb_msg[NL80211_ATTR_IFINDEX]) {
         info->if_index = (enum nl80211_iftype)nla_get_u32(tb_msg[NL80211_ATTR_IFINDEX]);
-        printf("Found ifindex: %d\n", info->if_index);
     }
     if (tb_msg[NL80211_ATTR_WDEV]) {
         info->wdev = nla_get_u64(tb_msg[NL80211_ATTR_WDEV]);
@@ -188,7 +187,8 @@ static int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index
     int ret;
     int err;
     int nl_flag = 0;
-    if (if_index < 0 && phy_id) {
+    if (if_index < 0 && phy_id >= 0) {
+        printf("Setting phy dump flag...\n");
         nl_flag = NLM_F_DUMP;
     }
     struct nl_msg *msg = nlmsg_alloc();
@@ -203,7 +203,7 @@ static int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index
         0,                          //seq no / auto 
         nl->nl80211_id,             //numeric family id
         0,                          //header length in bytes
-        0,                          //flags
+        nl_flag,                    //flags
         NL80211_CMD_GET_INTERFACE,  //command
         0                           //version
     );
@@ -221,7 +221,7 @@ static int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index
     }
 
     //Specify results for if_index or phy.
-    if (if_index < 0 && phy_id) {
+    if (if_index < 0 && phy_id >= 0) {
         //If phy, this is a dump request!
         nla_put_u32(msg, NL80211_ATTR_WIPHY, phy_id);
     } else {
@@ -240,12 +240,26 @@ static int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index
     //Set custom netlink callback.
     nl_cb_err(cb, NL_CB_CUSTOM, error_handler, &ret);
     nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &ret);
-    if (if_index < 0 && phy_id) {
+    if (if_index < 0  && phy_id >= 0) {
         nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &err);
     }
     nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, callback_if_info, info);
     
     //Receive message (callback handles recv data)
+    if (if_index < 0 && phy_id >= 0) {
+        err = 1;
+        while (err > 0) {
+            ret = nl_recvmsgs(nl->sk, cb);
+            if (err < 0) {
+                fprintf(stderr, "Could not pull info from dump.\n");
+            }
+            if (set_if_down(info->if_name) == 0) {
+                printf("Successfully turned off %s\n", info->if_name);
+            } else {
+                printf("Failed to turn off %s\n", info->if_name);
+            }
+        }
+    }
     while (ret > 0) {
         nl_recvmsgs(nl->sk, cb);
     }
@@ -400,18 +414,7 @@ int handler_get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id, int m
     return ret;
 }
 
-int get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id, int mon) {
-    return handler_get_phy_info(nl, info, phy_id, mon);
-}
 
-
-/*
- *   Fill the data fields of struct info with results.
-*/
-int get_if_info(nl_handle *nl, struct if_info *info, int if_index, int phy_id) {
-    int ret = handler_get_if_info(nl, info, if_index, phy_id);
-    return ret;
-}
 
 /*
 *   Given two strings, compare their 
@@ -605,6 +608,22 @@ static int handler_create_new_if(nl_handle *nl, enum nl80211_iftype if_type, int
     }
     nlmsg_free(msg);
     return 0;
+}
+
+/*
+ *  Fill the data fields of a struct with results.
+*/
+int get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id, int mon) {
+    return handler_get_phy_info(nl, info, phy_id, mon);
+}
+
+
+/*
+ *   Fill the data fields of struct info with results.
+*/
+int get_if_info(nl_handle *nl, struct if_info *info, int if_index, int phy_id) {
+    int ret = handler_get_if_info(nl, info, if_index, phy_id);
+    return ret;
 }
 
 /*
