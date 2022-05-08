@@ -26,9 +26,9 @@ void print_if_info(struct if_info *info) {
 
 void print_phy_info(struct phy_info *info) {
     printf("%s:\n", info->phy_name);
-    printf("\tPHY ID: %d\n", info->phy_id);
-    printf("\tCan do hardware mntr mode: %d\n", info->hard_mon);
-    printf("\tCan do software mntr mode: %d\n", info->soft_mon);
+    printf("\tphy id: %d\n", info->phy_id);
+    printf("\tHardware mntr mode: %d\n", info->hard_mon);
+    printf("\tSoftware mntr mode: %d\n", info->soft_mon);
     printf("\n");
 }
 
@@ -68,8 +68,7 @@ int set_up_mntr_if(nl_handle *nl, struct if_info *v_info, struct if_info *keep_i
     for (int phyid = 0; phyid < 4; phyid++) {
         if (get_phy_info(nl, &p_info, phyid) < 0) {
             fprintf(stderr, "Phy%d info dump failed.\n", phyid);
-        }
-        if (p_info.hard_mon == 1 && p_info.soft_mon == 1) {
+        } else if (p_info.hard_mon == 1 || p_info.soft_mon == 1) {
             p_info.phy_id = phyid;
             break;
         }

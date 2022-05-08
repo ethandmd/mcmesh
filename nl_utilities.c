@@ -265,7 +265,6 @@ int callback_phy_info(struct nl_msg *msg, void *arg) {
     if (tb_msg[NL80211_ATTR_WIPHY]) {
         info->phy_id = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY]);
         info->phy_name = nla_get_string(tb_msg[NL80211_ATTR_WIPHY_NAME]);
-        printf("Examining %s:\n", info->phy_name);
     }
 
     if (tb_msg[NL80211_ATTR_SUPPORTED_IFTYPES]) {
@@ -273,7 +272,6 @@ int callback_phy_info(struct nl_msg *msg, void *arg) {
         nla_for_each_nested(nl_mode, tb_msg[NL80211_ATTR_SUPPORTED_IFTYPES], rem_mode) {
             if (nla_type(nl_mode) == NL80211_IFTYPE_MONITOR) {
                 info->hard_mon = 1;
-                printf("\tSupports monitor mode on the hardware.\n");
             }
         }
     }
@@ -283,7 +281,6 @@ int callback_phy_info(struct nl_msg *msg, void *arg) {
         nla_for_each_nested(nl_mode, tb_msg[NL80211_ATTR_SOFTWARE_IFTYPES], rem_mode) {
             if (nla_type(nl_mode) == NL80211_IFTYPE_MONITOR) {
                 info->soft_mon = 1;
-                printf("\tSupports monitor mode on the driver.\n");
             }
         }
     }
@@ -366,18 +363,24 @@ int handler_get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id){
             if (err < 0) {
                 fprintf(stderr, "Could not read results from phy dump.\n");
             }
-            if (info->soft_mon == 1 && info->hard_mon == 1) {
+            if (info->soft_mon == 1 || info->hard_mon == 1) {
                 printf("Found monitor mode capability on %s...\n", info->phy_name);
                 nlmsg_free(msg);
                 nl_cb_put(cb);
                 return 0;
             }
         }
+    } else {
+        while (ret > 0) {
+            nl_recvmsgs(nl->sk, cb);
+            if (info->soft_mon == 1 || info->hard_mon == 1) {
+                    printf("Found monitor mode capability on %s...\n", info->phy_name);
+                    nlmsg_free(msg);
+                    nl_cb_put(cb);
+                    return 0;
+                }
+        }
     }
-
-    // while (ret > 0) {
-    //     nl_recvmsgs(nl->sk, cb);
-    // }
 
     //Clean up resources.
     nlmsg_free(msg);
