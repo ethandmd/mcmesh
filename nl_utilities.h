@@ -29,7 +29,7 @@ void nl_cleanup(nl_handle *nl);
 
 int get_if_index(const char *if_name);
 
-int get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id, int mon);
+int get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id);
 
 int get_if_info(nl_handle *nl, struct if_info *info, int if_index, int phy_id);
 

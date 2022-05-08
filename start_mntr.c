@@ -24,16 +24,11 @@ void print_if_info(struct if_info *info) {
 }
 
 void print_phy_info(struct phy_info *info) {
-    //printf("%s:\n", info->phy_name);
-    //printf("\tPHY ID: %d\n", info->phy_id);
+    printf("%s:\n", info->phy_name);
+    printf("\tPHY ID: %d\n", info->phy_id);
     printf("\tCan do hardware mntr mode: %d\n", info->hard_mon);
     printf("\tCan do software mntr mode: %d\n", info->soft_mon);
     printf("\n");
-}
-
-int find_mntr_phy(nl_handle *nl, struct phy_info *info, int phy_id) {
-    printf("Getting phy%d info dump...\n", phy_id);
-    return get_phy_info(nl, info, phy_id, 1);
 }
 
 int start_mntr_if(nl_handle *nl, struct if_info *info, const char *if_type, int phy_id, const char *if_name) {
@@ -47,27 +42,20 @@ int start_mntr_if(nl_handle *nl, struct if_info *info, const char *if_type, int 
         fprintf(stderr, "Could not set %s up.\n", if_name);
         return -1;
     }
-    printf("Verifying new virtual interface configuration...\n");
-    int if_index = get_if_index(if_name);
-    if (get_if_info(nl, info, if_index, -1) < 0) {
-        fprintf(stderr, "Could not retrieve %s information.\n", if_name);
-        return -1;
-    }
+    // printf("Verifying new virtual interface configuration...\n");
+    // int if_index = get_if_index(if_name);
+    // if (get_if_info(nl, info, if_index, -1) < 0) {
+    //     fprintf(stderr, "Could not retrieve %s information.\n", if_name);
+    //     return -1;
+    // }
     return 0;
 }
 
 int set_iftype_mntr(nl_handle *nl, struct if_info *v_info) {
     struct phy_info p_info;
 
-    //Iterating through possibly the first 4 wiphy's is not a long term solution.
-    for (int phyid = 0; phyid < 4; phyid++) {
-        if (find_mntr_phy(nl, &p_info, phyid) < 0) {
-            fprintf(stderr, "wiphy%d to support monitor mode.\n", phyid);
-        } else if (p_info.soft_mon == 1) {
-            p_info.phy_id = phyid;
-            printf("Found monitor capable device: phy%d\n", p_info.phy_id);
-            break;
-        }
+    if (get_phy_info(nl, &p_info, -1) < 0) {
+        fprintf(stderr, "Phy info dump failed.\n");
     }
     get_if_info(nl, v_info, -1, p_info.phy_id);
     print_if_info(v_info);
@@ -79,22 +67,19 @@ int set_iftype_mntr(nl_handle *nl, struct if_info *v_info) {
     set_if_up(v_info->if_name);
 }
 
-int set_up_mntr_if(nl_handle *nl, struct if_info *v_info) {
+int set_up_mntr_if(nl_handle *nl, struct if_info *v_info, struct if_info *keep_if_info) {
     struct phy_info p_info;
 
-    //Iterating through possibly the first 4 wiphy's is not a long term solution.
-    for (int phyid = 0; phyid < 4; phyid++) {
-        if (find_mntr_phy(nl, &p_info, phyid) < 0) {
-            fprintf(stderr, "wiphy%d to support monitor mode.\n", phyid);
-        } else if (p_info.soft_mon == 1) {
-            p_info.phy_id = phyid;
-            printf("Found monitor capable device on phy%d\n", p_info.phy_id);
-            break;
-        }
+    if (get_phy_info(nl, &p_info, -1) < 0) {
+        fprintf(stderr, "Phy info dump failed.\n");
     }
-    // printf("Turning off interfaces on phy%d...\n", p_info.phy_id);
-    // struct if_info tmp;
-    // get_if_info(nl, &tmp, -1, p_info.phy_id);
+
+    printf("EMPTY V_INFO:\n");
+    print_if_info(v_info);
+    get_if_info(nl, keep_if_info, -1, p_info.phy_id);
+    printf("FILLED KEEP INFO:\n");
+    print_if_info(keep_if_info);
+    delete_if(nl, keep_if_info->if_index);
 
     const char *mntr_iftype = "monitor";
     const char *mntr_ifname = "mcmon";
@@ -102,6 +87,11 @@ int set_up_mntr_if(nl_handle *nl, struct if_info *v_info) {
         fprintf(stderr, "Could not start new monitor interface on phy%d.\n", p_info.phy_id);
         return -1;
     }
+    printf("FILLED V_INFO: (with ifindex: %d)\n", get_if_index(mntr_ifname));
+    get_if_info(nl, v_info, -1, p_info.phy_id);
+    print_if_info(v_info);
+
+    return 0;
 }
 
 int main(int argc, char** argv) {
@@ -110,6 +100,7 @@ int main(int argc, char** argv) {
     sk_handle skh;
     packet_buffer pb;
     struct if_info v_info;
+    struct if_info keep_if_info;
     //info.if_name = argv[1];
     int ITER = 5;
     if (argc > 1) {
@@ -124,13 +115,12 @@ int main(int argc, char** argv) {
     }
 
     printf("Starting set up of a new virtual monitor mode interface...\n");
-    // printf("\n");
-    // if (set_up_mntr_if(&nl, &v_info) < 0) {
-    //     fprintf(stderr, "Aborting...\n");
-    //     return -1;
-    // }
+    printf("\n");
+    if (set_up_mntr_if(&nl, &v_info, &keep_if_info) < 0) {
+        fprintf(stderr, "Aborting...\n");
+        return -1;
+    }
     //set_iftype_mntr(&nl, &v_info);
-    //print_if_info(&v_info);
 
     printf("Creating new packet socket...\n");
     create_pack_socket(&skh);
@@ -138,18 +128,16 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    //printf("Binding packet socket to new monitor mode virtual interface %s...\n", v_info.if_name);
-    // if (bind_pack_socket(&skh, v_info.if_index) < 0) {
-    //     return -1;
-    // }
-    bind_pack_socket(&skh, 2);
+    printf("Binding packet socket to new monitor mode virtual interface %s...\n", v_info.if_name);
+     if (bind_pack_socket(&skh, v_info.if_index) < 0) {
+         return -1;
+    }
 
     printf("Waiting to receive packets...\n");
     allocate_packet_buffer(&pb);
     //Just for testing, remove asap.
     for (int n=0; n<ITER; n++) {
-        int n = recvpacket(&skh, &pb);
-        printf("\nReceived %d bytes.\n", n);
+        recvpacket(&skh, &pb);
 
         // mgmt_frame_hdr *frame = (mgmt_frame_hdr *)(pb.buffer);
         // printf("Frame Control: %.2X-%.2X\n", frame->frame_control[0], frame->frame_control[1]);
@@ -159,19 +147,18 @@ int main(int argc, char** argv) {
         // printf("Address 3: %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",frame->address_3[0],frame->address_3[1],frame->address_3[2],frame->address_3[3],frame->address_3[4],frame->address_3[5]);
         // printf("Frame seq: %.2X-%.2X\n", frame->seq_ctrl[0], frame->seq_ctrl[1]);
 
-        struct ethhdr *eth = (struct ethhdr *)(pb.buffer);
-        printf("\nReceived Ethernet Header:\n");
-        printf("Source Address : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",eth->h_source[0],eth->h_source[1],eth->h_source[2],eth->h_source[3],eth->h_source[4],eth->h_source[5]);
-        printf("Destination Address : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",eth->h_dest[0],eth->h_dest[1],eth->h_dest[2],eth->h_dest[3],eth->h_dest[4],eth->h_dest[5]);
-        printf("Protocol : %d\n",eth->h_proto);
-        printf("\n");
+        // struct ethhdr *eth = (struct ethhdr *)(pb.buffer);
+        // printf("\nReceived Ethernet Header:\n");
+        // printf("Source Address : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",eth->h_source[0],eth->h_source[1],eth->h_source[2],eth->h_source[3],eth->h_source[4],eth->h_source[5]);
+        // printf("Destination Address : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",eth->h_dest[0],eth->h_dest[1],eth->h_dest[2],eth->h_dest[3],eth->h_dest[4],eth->h_dest[5]);
+        // printf("Protocol : %d\n",eth->h_proto);
+        // printf("\n");
     }
     
     printf("Removing created virtual interface...\n");
-    const char *ret_iftype = "managed";
     //set_if_type(&nl, ret_iftype, if_index, if_name);
-    //delete_if(&nl, v_info.if_index);
-    //create_new_if(&nl, info.if_type, info.wiphy, info.if_name);
+    delete_if(&nl, v_info.if_index);
+    create_new_if(&nl, "managed", keep_if_info.wiphy, keep_if_info.if_name);
     nl_cleanup(&nl);
 
     return 0;

@@ -195,8 +195,10 @@ int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index, int p
     //Specify results for if_index or phy.
     if (if_index < 0 && phy_id >= 0) {
         //If phy, this is a dump request for all interfaces on phy!
+        printf("LINE 198, phyid:%d\n", phy_id);
         nla_put_u32(msg, NL80211_ATTR_WIPHY, phy_id);
     } else {
+        printf("LINE 201, ifindex:%d\n", if_index);
         nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_index);
     }
 
@@ -225,11 +227,6 @@ int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index, int p
             if (err < 0) {
                 fprintf(stderr, "Could not pull info from dump.\n");
             }
-        //     if (info->if_name && (info->if_name) == 0) {
-        //         printf("Successfully turned off %s\n", info->if_name);
-        //     } else {
-        //         printf("Failed to turn off %s\n", info->if_name);
-        //     }
         }
     }
     while (ret > 0) {
@@ -263,11 +260,8 @@ int callback_phy_info(struct nl_msg *msg, void *arg) {
     nla_parse(tb_msg, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
     if (tb_msg[NL80211_ATTR_WIPHY]) {
-        if (nla_get_u32(tb_msg[NL80211_ATTR_WIPHY])) {
-            //info->phy_id = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY]);
-            info->phy_name = nla_get_string(tb_msg[NL80211_ATTR_WIPHY_NAME]);
-            printf("Phy name: %s\n", info->phy_name);
-        }
+        info->phy_id = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY]);
+        info->phy_name = nla_get_string(tb_msg[NL80211_ATTR_WIPHY_NAME]);
     }
 
     if (tb_msg[NL80211_ATTR_SUPPORTED_IFTYPES]) {
@@ -304,13 +298,13 @@ int callback_phy_info(struct nl_msg *msg, void *arg) {
     return NL_SKIP;
 }
 
-int handler_get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id, int mon){
+int handler_get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id){
     int nl_flag = 0;
-    // if (phy_id < 0) {
-    //     nl_flag = NLM_F_DUMP;
-    // }
+    if (phy_id < 0) {
+        nl_flag = NLM_F_DUMP;
+    }
     int ret;
-    //int err;
+    int err;
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
         fprintf(stderr, "Could not allocate netlink message for phy info.\n");
@@ -337,7 +331,7 @@ int handler_get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id, int m
     }
 
     //Specify results for if_index
-    if (!nl_flag) {
+    if (phy_id >= 0) {
         nla_put_u32(msg, NL80211_ATTR_WIPHY, phy_id);
     }
 
@@ -351,33 +345,34 @@ int handler_get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id, int m
     ret = 1;
 
     //Set custom netlink callback.
-    int err;
     nl_cb_err(cb, NL_CB_CUSTOM, error_handler, &ret);
     nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &ret);
-    // if (nl_flag) {
-    //     printf("Setting phy dump callback...\n");
-    //     nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &err);
-    // }
+    if (phy_id < 0) {
+        nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &err);
+    }
     nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, callback_phy_info, info);
     
     //Receive message (callback handles recv data)
-    
-    while (ret > 0) {
-        nl_recvmsgs(nl->sk, cb);
-    }
+    if (phy_id < 0) {
+        err = 1;
+        while (err > 0) {
+            ret = nl_recvmsgs(nl->sk, cb);
+            if (err < 0) {
+                fprintf(stderr, "Could not read results from phy dump.\n");
+            }
 
-    //If phy has what we want, take it and run.
-    if (mon) {
-        if (info->hard_mon || info->soft_mon == 1) {
-            nlmsg_free(msg);
-            nl_cb_put(cb);
-            return 0;
+            if (info->soft_mon) {
+                printf("Found monitor mode capability on %s...\n", info->phy_name);
+                nlmsg_free(msg);
+                nl_cb_put(cb);
+                return 0;
+            }
         }
     }
-
-    // if (ret == 0) {
-    //     ret = info->iftype;
-    //}
+    
+    // while (ret > 0) {
+    //     nl_recvmsgs(nl->sk, cb);
+    // }
 
     //Clean up resources.
     nlmsg_free(msg);
@@ -588,8 +583,8 @@ int handler_create_new_if(nl_handle *nl, enum nl80211_iftype if_type, int wiphy,
 /*
  *  Fill the data fields of a struct with results.
 */
-int get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id, int mon) {
-    return handler_get_phy_info(nl, info, phy_id, mon);
+int get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id) {
+    return handler_get_phy_info(nl, info, phy_id);
 }
 
 
@@ -614,6 +609,7 @@ int set_if_type(nl_handle *nl, const char *iftype, int if_index) {
 *   Delete interface by if index.
 */
 int delete_if(nl_handle *nl, int if_index) {
+    printf("Deleting ifindex: %d...\n", if_index);
     int ret = handler_delete_if(nl, if_index);
     return ret;
 }
@@ -625,6 +621,7 @@ int delete_if(nl_handle *nl, int if_index) {
 int create_new_if(nl_handle *nl, const char *if_type, int wiphy, const char *if_name) {
     enum nl80211_iftype type = convert_iftype(if_type);
     //enum nl80211_attrs wiphy_type = (enum nl80211_attrs)wiphy;
+    printf("Creating interface, ifname: %s, iftype:%s...\n", if_name, if_type);
     int ret = handler_create_new_if(nl, type, wiphy, if_name);
     return ret;
 }
