@@ -154,7 +154,6 @@ static int callback_if_info(struct nl_msg *msg, void *arg) {
     if (tb_msg[NL80211_ATTR_WIPHY_FREQ]) {
         int freq = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_FREQ]);
         info->if_freq = freq;
-        printf("Found freq: %d\n", freq);
     }
 
     return NL_SKIP;
@@ -364,6 +363,7 @@ int handler_get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id){
             if (err < 0) {
                 fprintf(stderr, "Could not read results from phy dump.\n");
             }
+            printf("Current phy: PHY%d\n", info->phy_id);
 
             if (info->soft_mon == 1 && info->hard_mon == 1) {
                 printf("Found monitor mode capability on %s...\n", info->phy_name);
