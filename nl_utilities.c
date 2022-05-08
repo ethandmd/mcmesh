@@ -183,10 +183,6 @@ int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index, int p
         NL80211_CMD_GET_INTERFACE,  //command
         0                           //version
     );
-    //struct nl_msg *msg;
-    //if (build_genlmsg(nl, msg, NL80211_CMD_GET_INTERFACE, 0) < 0) {
-    //    return -1;
-    //}
 
     //Allocate netlink callback.
     struct nl_cb *cb = nl_cb_alloc(NL_CB_DEFAULT);
@@ -198,7 +194,7 @@ int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index, int p
 
     //Specify results for if_index or phy.
     if (if_index < 0 && phy_id >= 0) {
-        //If phy, this is a dump request!
+        //If phy, this is a dump request for all interfaces on phy!
         nla_put_u32(msg, NL80211_ATTR_WIPHY, phy_id);
     } else {
         nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_index);
