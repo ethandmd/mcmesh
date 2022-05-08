@@ -64,9 +64,14 @@ int set_iftype_mntr(nl_handle *nl, struct if_info *v_info) {
 
 int set_up_mntr_if(nl_handle *nl, struct if_info *v_info, struct if_info *keep_if_info) {
     struct phy_info p_info;
-
-    if (get_phy_info(nl, &p_info, -1) < 0) {
-        fprintf(stderr, "Phy info dump failed.\n");
+    //Arbitrarily attempt to scan 4 wiphys looking for a monitor mode capable wiphy...Hacky.
+    for (int phyid = 0; phyid < 4; phyid++) {
+        if (get_phy_info(nl, &p_info, phyid) < 0) {
+            fprintf(stderr, "Phy%d info dump failed.\n", phyid);
+        }
+        if (p_info.hard_mon == 1 && p_info.soft_mon == 1) {
+            break;
+        }
     }
 
     get_if_info(nl, keep_if_info, -1, p_info.phy_id);

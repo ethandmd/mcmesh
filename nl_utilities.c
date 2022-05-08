@@ -372,11 +372,9 @@ int handler_get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id){
                 nl_cb_put(cb);
                 return 0;
             }
-            printf("This wiphy does not support monitor mode.\n");
         }
     }
-    printf("Scanned %s\n", info->phy_name);
-    
+
     // while (ret > 0) {
     //     nl_recvmsgs(nl->sk, cb);
     // }
