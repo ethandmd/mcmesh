@@ -19,7 +19,7 @@
 *       -protocol: ETH_P_ALL (every packet!)
 */
 void create_pack_socket(sk_handle *skh) {
-    skh->sockfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    skh->sockfd = socket(AF_PACKET, SOCK_RAW, 0);//htons(ETH_P_ALL));
     if (skh->sockfd < 0) {
         fprintf(stderr, "Unable to create packet socket.\n");
     }
@@ -59,5 +59,7 @@ int recvpacket(sk_handle *skh, packet_buffer *pb) {
     printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",pkt->one_two[0],pkt->one_two[1],pkt->one_two[2],pkt->one_two[3],pkt->one_two[4],pkt->one_two[5],pkt->one_two[6],pkt->one_two[7]);
     printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\t",pkt->two_one[0],pkt->two_one[1],pkt->two_one[2],pkt->two_one[3],pkt->two_one[4],pkt->two_one[5],pkt->two_one[6],pkt->one_two[7]);
     printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",pkt->two_two[0],pkt->two_two[1],pkt->two_two[2],pkt->two_two[3],pkt->two_two[4],pkt->two_two[5],pkt->two_two[6],pkt->one_two[7]);
+    printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\t",pkt->three_one[0],pkt->three_one[1],pkt->three_one[2],pkt->three_one[3],pkt->three_one[4],pkt->three_one[5],pkt->three_one[6],pkt->three_one[7]);
+    printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",pkt->three_two[0],pkt->three_two[1],pkt->three_two[2],pkt->three_two[3],pkt->three_two[4],pkt->three_two[5],pkt->three_two[6],pkt->three_two[7]);
     printf("\n");
 }

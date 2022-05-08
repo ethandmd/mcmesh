@@ -16,7 +16,7 @@ struct phy_info {
 };
 
 struct if_info {
-    const char *if_name;
+    char *if_name;
     int if_index;
     int wdev;
     int wiphy;
@@ -44,5 +44,7 @@ int set_if_down(const char *if_name);
 int delete_if(nl_handle *nl, int if_index);
 
 int create_new_if(nl_handle *nl, const char *if_type, int wiphy, const char *if_name);
+
+int set_if_chan(nl_handle *nl, int if_index, int frequency);
 
 #endif

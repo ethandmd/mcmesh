@@ -29,7 +29,9 @@ struct dumb_cast {
     unsigned char one_one[8];
     unsigned char one_two[8];
     unsigned char two_one[8];
-    unsigned char two_two[8];   //32 octets enough?
+    unsigned char two_two[8];
+    unsigned char three_one[8];
+    unsigned char three_two[8];
 };
 
 void create_pack_socket(sk_handle *skh);

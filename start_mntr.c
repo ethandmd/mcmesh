@@ -42,12 +42,6 @@ int start_mntr_if(nl_handle *nl, struct if_info *info, const char *if_type, int 
         fprintf(stderr, "Could not set %s up.\n", if_name);
         return -1;
     }
-    // printf("Verifying new virtual interface configuration...\n");
-    // int if_index = get_if_index(if_name);
-    // if (get_if_info(nl, info, if_index, -1) < 0) {
-    //     fprintf(stderr, "Could not retrieve %s information.\n", if_name);
-    //     return -1;
-    // }
     return 0;
 }
 
@@ -74,23 +68,21 @@ int set_up_mntr_if(nl_handle *nl, struct if_info *v_info, struct if_info *keep_i
         fprintf(stderr, "Phy info dump failed.\n");
     }
 
-    printf("EMPTY V_INFO:\n");
-    print_if_info(v_info);
     get_if_info(nl, keep_if_info, -1, p_info.phy_id);
-    printf("FILLED KEEP INFO:\n");
-    print_if_info(keep_if_info);
     delete_if(nl, keep_if_info->if_index);
 
+    ////test
+    // char *name;
+    // strcpy(name, keep_if_info->if_name);
+    // strcat(name, "mon");
+    // printf("%s\n", name);
     const char *mntr_iftype = "monitor";
-    const char *mntr_ifname = "mcmon";
+    char *mntr_ifname = "mcmon";
     if (start_mntr_if(nl, v_info, mntr_iftype, p_info.phy_id, mntr_ifname) < 0) {
         fprintf(stderr, "Could not start new monitor interface on phy%d.\n", p_info.phy_id);
         return -1;
     }
-    printf("FILLED V_INFO: (with ifindex: %d)\n", get_if_index(mntr_ifname));
     get_if_info(nl, v_info, -1, p_info.phy_id);
-    print_if_info(v_info);
-
     return 0;
 }
 
@@ -120,6 +112,9 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Aborting...\n");
         return -1;
     }
+    printf("Setting monitor interface channel...\n");
+    set_if_chan(&nl, v_info.if_index, 2442);
+    printf("\n");
     //set_iftype_mntr(&nl, &v_info);
 
     printf("Creating new packet socket...\n");
@@ -133,7 +128,7 @@ int main(int argc, char** argv) {
          return -1;
     }
 
-    printf("Waiting to receive packets...\n");
+    printf("Waiting to receive packets...\n\n");
     allocate_packet_buffer(&pb);
     //Just for testing, remove asap.
     for (int n=0; n<ITER; n++) {

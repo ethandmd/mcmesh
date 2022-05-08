@@ -195,10 +195,8 @@ int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index, int p
     //Specify results for if_index or phy.
     if (if_index < 0 && phy_id >= 0) {
         //If phy, this is a dump request for all interfaces on phy!
-        printf("LINE 198, phyid:%d\n", phy_id);
         nla_put_u32(msg, NL80211_ATTR_WIPHY, phy_id);
     } else {
-        printf("LINE 201, ifindex:%d\n", if_index);
         nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_index);
     }
 
@@ -580,6 +578,37 @@ int handler_create_new_if(nl_handle *nl, enum nl80211_iftype if_type, int wiphy,
     return 0;
 }
 
+/**/
+int handler_set_if_chan(nl_handle *nl, int if_index, int frequency) {
+    struct nl_msg *msg = nlmsg_alloc();
+    if (!msg) {
+        fprintf(stderr, "Could not allovate netlink message.\n");
+        return -1;
+    }
+    genlmsg_put(
+        msg,
+        0,
+        0,
+        nl->nl80211_id,
+        0,
+        0,
+        NL80211_CMD_SET_CHANNEL,
+        0
+    );
+    nla_put_u32(msg, NL80211_ATTR_WIPHY_FREQ, frequency);
+    nla_put_u32(msg, NL80211_ATTR_CHANNEL_WIDTH, NL80211_CHAN_WIDTH_20);
+    nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_index);
+    
+    int ret = nl_send_auto(nl->sk, msg);
+    if (ret < 0) {
+        fprintf(stderr, "Could not send netlink message to del if.\n");
+        nlmsg_free(msg);
+        return -1;
+    }
+    nlmsg_free(msg);
+    return 0; 
+}
+
 /*
  *  Fill the data fields of a struct with results.
 */
@@ -625,3 +654,11 @@ int create_new_if(nl_handle *nl, const char *if_type, int wiphy, const char *if_
     int ret = handler_create_new_if(nl, type, wiphy, if_name);
     return ret;
 }
+
+/*
+*   Set wiphy channel frequency (MHz) and width (MHz)
+*/
+int set_if_chan(nl_handle *nl, int if_index, int frequency) {
+    return handler_set_if_chan(nl, if_index, frequency);
+}
+
