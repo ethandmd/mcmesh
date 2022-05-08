@@ -293,8 +293,8 @@ static int callback_phy_info(struct nl_msg *msg, void *arg) {
     if (tb_msg[NL80211_ATTR_WIPHY]) {
         if (nla_get_u32(tb_msg[NL80211_ATTR_WIPHY])) {
             //info->phy_id = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY]);
-            //info->phy_name = nla_get_string(tb_msg[NL80211_ATTR_WIPHY_NAME]);
-            printf("Line 272, phy name: %s\n", info->phy_name);
+            info->phy_name = nla_get_string(tb_msg[NL80211_ATTR_WIPHY_NAME]);
+            printf("Phy name: %s\n", info->phy_name);
         }
     }
 
