@@ -32,7 +32,7 @@ void print_phy_info(struct phy_info *info) {
 }
 
 int find_mntr_phy(nl_handle *nl, struct phy_info *info, int phy_id) {
-    printf("Getting phy info dump...\n");
+    printf("Getting phy %dinfo dump...\n", phy_id);
     return get_phy_info(nl, info, phy_id, 1);
 }
 
@@ -65,8 +65,9 @@ int set_up_mntr_if(nl_handle *nl, struct if_info *v_info) {
             fprintf(stderr, "wiphy%d to support monitor mode.\n", phyid);
         } else if (p_info.soft_mon == 1) {
             p_info.phy_id = phyid;
+            printf("Found monitor capable device on phy%d\n", p_info.phy_id);
+            break;
         }
-        break;
     }
     printf("Turning off interfaces on phy%d...\n", p_info.phy_id);
     struct if_info tmp;
