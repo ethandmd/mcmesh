@@ -70,6 +70,7 @@ int set_up_mntr_if(nl_handle *nl, struct if_info *v_info, struct if_info *keep_i
             fprintf(stderr, "Phy%d info dump failed.\n", phyid);
         }
         if (p_info.hard_mon == 1 && p_info.soft_mon == 1) {
+            p_info.phy_id = phyid;
             break;
         }
     }
