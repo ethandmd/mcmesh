@@ -32,7 +32,7 @@ void print_phy_info(struct phy_info *info) {
 }
 
 int find_mntr_phy(nl_handle *nl, struct phy_info *info, int phy_id) {
-    printf("Getting phy %dinfo dump...\n", phy_id);
+    printf("Getting phy%d info dump...\n", phy_id);
     return get_phy_info(nl, info, phy_id, 1);
 }
 
@@ -56,6 +56,29 @@ int start_mntr_if(nl_handle *nl, struct if_info *info, const char *if_type, int 
     return 0;
 }
 
+int set_iftype_mntr(nl_handle *nl, struct if_info *v_info) {
+    struct phy_info p_info;
+
+    //Iterating through possibly the first 4 wiphy's is not a long term solution.
+    for (int phyid = 0; phyid < 4; phyid++) {
+        if (find_mntr_phy(nl, &p_info, phyid) < 0) {
+            fprintf(stderr, "wiphy%d to support monitor mode.\n", phyid);
+        } else if (p_info.soft_mon == 1) {
+            p_info.phy_id = phyid;
+            printf("Found monitor capable device: phy%d\n", p_info.phy_id);
+            break;
+        }
+    }
+    get_if_info(nl, v_info, -1, p_info.phy_id);
+    print_if_info(v_info);
+    set_if_down(v_info->if_name);
+    if (set_if_type(nl, "monitor", v_info->if_index) < 0) {
+        fprintf(stderr, "Failed to put %s into monitor mode.\n", v_info->if_name);
+        return -1;
+    }
+    set_if_up(v_info->if_name);
+}
+
 int set_up_mntr_if(nl_handle *nl, struct if_info *v_info) {
     struct phy_info p_info;
 
@@ -69,9 +92,9 @@ int set_up_mntr_if(nl_handle *nl, struct if_info *v_info) {
             break;
         }
     }
-    printf("Turning off interfaces on phy%d...\n", p_info.phy_id);
-    struct if_info tmp;
-    get_if_info(nl, &tmp, -1, p_info.phy_id);
+    // printf("Turning off interfaces on phy%d...\n", p_info.phy_id);
+    // struct if_info tmp;
+    // get_if_info(nl, &tmp, -1, p_info.phy_id);
 
     const char *mntr_iftype = "monitor";
     const char *mntr_ifname = "mcmon";
@@ -101,12 +124,13 @@ int main(int argc, char** argv) {
     }
 
     printf("Starting set up of a new virtual monitor mode interface...\n");
-    printf("\n");
-    if (set_up_mntr_if(&nl, &v_info) < 0) {
-        fprintf(stderr, "Aborting...\n");
-        return -1;
-    }
-    print_if_info(&v_info);
+    // printf("\n");
+    // if (set_up_mntr_if(&nl, &v_info) < 0) {
+    //     fprintf(stderr, "Aborting...\n");
+    //     return -1;
+    // }
+    //set_iftype_mntr(&nl, &v_info);
+    //print_if_info(&v_info);
 
     printf("Creating new packet socket...\n");
     create_pack_socket(&skh);
@@ -114,10 +138,11 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    printf("Binding packet socket to new monitor mode virtual interface...\n");
-    if (bind_pack_socket(&skh, v_info.if_index) < 0) {
-        return -1;
-    }
+    //printf("Binding packet socket to new monitor mode virtual interface %s...\n", v_info.if_name);
+    // if (bind_pack_socket(&skh, v_info.if_index) < 0) {
+    //     return -1;
+    // }
+    bind_pack_socket(&skh, 2);
 
     printf("Waiting to receive packets...\n");
     allocate_packet_buffer(&pb);
@@ -145,7 +170,7 @@ int main(int argc, char** argv) {
     printf("Removing created virtual interface...\n");
     const char *ret_iftype = "managed";
     //set_if_type(&nl, ret_iftype, if_index, if_name);
-    delete_if(&nl, v_info.if_index);
+    //delete_if(&nl, v_info.if_index);
     //create_new_if(&nl, info.if_type, info.wiphy, info.if_name);
     nl_cleanup(&nl);
 
