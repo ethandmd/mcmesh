@@ -10,17 +10,27 @@ typedef struct {
 } packet_buffer;
 
 
+// /*
+//  * 802.11ac MAC Frame
+// */
+// typedef struct {
+//     unsigned char frame_control[2];
+//     unsigned char frame_duration[2];
+//     unsigned char source[6];            /* Source mac addr */
+//     unsigned char destination[6];       /* Destination mac addr */ 
+//     unsigned char address_3[6];         /* Filtering (BSS?) ID */
+//     unsigned char seq_ctrl[2];          /* frame sequence */
+// } mgmt_frame_hdr;
+
 /*
- * 802.11ac MAC Frame
+ *  Dumb cast. Literally.
 */
-typedef struct {
-    unsigned char frame_control[2];
-    unsigned char frame_duration[2];
-    unsigned char source[6];            /* Source mac addr */
-    unsigned char destination[6];       /* Destination mac addr */ 
-    unsigned char address_3[6];         /* Filtering (BSS?) ID */
-    unsigned char seq_ctrl[2];          /* frame sequence */
-} mgmt_frame_hdr;
+struct dumb_cast {
+    unsigned char one_one[8];
+    unsigned char one_two[8];
+    unsigned char two_one[8];
+    unsigned char two_two[8];   //32 octets enough?
+};
 
 void create_pack_socket(sk_handle *skh);
 

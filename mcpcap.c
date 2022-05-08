@@ -52,5 +52,12 @@ void allocate_packet_buffer(packet_buffer *pb) {
 *   Fill buffer with binary data from socket.
 */
 int recvpacket(sk_handle *skh, packet_buffer *pb) {
-    return recvfrom(skh->sockfd, pb->buffer, ETH_FRAME_LEN, 0, NULL, NULL);
+    int n = recvfrom(skh->sockfd, pb->buffer, ETH_FRAME_LEN, 0, NULL, NULL);
+    printf("Received %d bytes.\n", n);
+    struct dumb_cast *pkt = (struct dumb_cast *)(pb->buffer);
+    printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\t",pkt->one_one[0],pkt->one_one[1],pkt->one_one[2],pkt->one_one[3],pkt->one_one[4],pkt->one_one[5],pkt->one_one[6],pkt->one_one[7]);
+    printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",pkt->one_two[0],pkt->one_two[1],pkt->one_two[2],pkt->one_two[3],pkt->one_two[4],pkt->one_two[5],pkt->one_two[6],pkt->one_two[7]);
+    printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\t",pkt->two_one[0],pkt->two_one[1],pkt->two_one[2],pkt->two_one[3],pkt->two_one[4],pkt->two_one[5],pkt->two_one[6],pkt->one_two[7]);
+    printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",pkt->two_two[0],pkt->two_two[1],pkt->two_two[2],pkt->two_two[3],pkt->two_two[4],pkt->two_two[5],pkt->two_two[6],pkt->one_two[7]);
+    printf("\n");
 }
