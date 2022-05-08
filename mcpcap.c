@@ -37,7 +37,7 @@ int bind_pack_socket(sk_handle *skh, int if_index) {
     };
 
     if (bind(skh->sockfd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
-        fprintf(stderr, "Unable to bind socket to interface.\n");
+        fprintf(stderr, "Unable to bind socket to if index %d.\n", if_index);
         return -1;
     }
 
