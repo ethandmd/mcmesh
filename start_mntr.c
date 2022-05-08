@@ -7,7 +7,7 @@
 
 
 /*
-*   $ gcc nl_utilities.c mcpcap.c sample.c -o sample $(pkg-config --cflags --libs libnl-genl-3.0)
+*   $ gcc nl_utilities.c mcpcap.c start_mntr.c -o start_mntr $(pkg-config --cflags --libs libnl-genl-3.0)
 *
 *   Example test:
 *   $ sudo ./sample wlan1 1000
@@ -63,8 +63,9 @@ int set_up_mntr_if(nl_handle *nl, struct if_info *v_info) {
     for (int phyid = 0; phyid < 4; phyid++) {
         if (find_mntr_phy(nl, &p_info, phyid) < 0) {
             fprintf(stderr, "wiphy%d to support monitor mode.\n", phyid);
+        } else if (p_info.soft_mon == 1) {
+            p_info.phy_id = phyid;
         }
-        p_info.phy_id = phyid;
         break;
     }
     printf("Turning off interfaces on phy%d...\n", p_info.phy_id);
@@ -131,7 +132,7 @@ int main(int argc, char** argv) {
         printf("Destination Address : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",frame->destination[0],frame->destination[1],frame->destination[2],frame->destination[3],frame->destination[4],frame->destination[5]);
         printf("Address 3: %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",frame->address_3[0],frame->address_3[1],frame->address_3[2],frame->address_3[3],frame->address_3[4],frame->address_3[5]);
         printf("Frame seq: %.2X-%.2X\n", frame->seq_ctrl[0], frame->seq_ctrl[1]);
-        
+
         // struct ethhdr *eth = (struct ethhdr *)(pb.buffer);
         // printf("\nReceived Ethernet Header:\n");
         // printf("Source Address : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",eth->h_source[0],eth->h_source[1],eth->h_source[2],eth->h_source[3],eth->h_source[4],eth->h_source[5]);
