@@ -122,13 +122,22 @@ int main(int argc, char** argv) {
     //Just for testing, remove asap.
     for (int n=0; n<ITER; n++) {
         int n = recvpacket(&skh, &pb);
-        printf("Received %d bytes.\n", n);
-        struct ethhdr *eth = (struct ethhdr *)(pb.buffer);
-        printf("\nReceived Ethernet Header:\n");
-        printf("Source Address : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",eth->h_source[0],eth->h_source[1],eth->h_source[2],eth->h_source[3],eth->h_source[4],eth->h_source[5]);
-        printf("Destination Address : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",eth->h_dest[0],eth->h_dest[1],eth->h_dest[2],eth->h_dest[3],eth->h_dest[4],eth->h_dest[5]);
-        printf("Protocol : %d\n",eth->h_proto);
-        printf("\n");
+        printf("\nReceived %d bytes.\n", n);
+
+        mgmt_frame_hdr *frame = (mgmt_frame_hdr *)(pb.buffer);
+        printf("Frame Control: %.2X-%.2X\n", frame->frame_control[0], frame->frame_control[1]);
+        printf("Duration: %.2X-%.2X\n", frame->frame_duration[0], frame->frame_duration[1]);
+        printf("Source Address : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",frame->source[0],frame->source[1],frame->source[2],frame->source[3],frame->source[4],frame->source[5]);
+        printf("Destination Address : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",frame->destination[0],frame->destination[1],frame->destination[2],frame->destination[3],frame->destination[4],frame->destination[5]);
+        printf("Address 3: %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",frame->address_3[0],frame->address_3[1],frame->address_3[2],frame->address_3[3],frame->address_3[4],frame->address_3[5]);
+        printf("Frame seq: %.2X-%.2X\n", frame->seq_ctrl[0], frame->seq_ctrl[1]);
+        
+        // struct ethhdr *eth = (struct ethhdr *)(pb.buffer);
+        // printf("\nReceived Ethernet Header:\n");
+        // printf("Source Address : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",eth->h_source[0],eth->h_source[1],eth->h_source[2],eth->h_source[3],eth->h_source[4],eth->h_source[5]);
+        // printf("Destination Address : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",eth->h_dest[0],eth->h_dest[1],eth->h_dest[2],eth->h_dest[3],eth->h_dest[4],eth->h_dest[5]);
+        // printf("Protocol : %d\n",eth->h_proto);
+        // printf("\n");
     }
     
     printf("Removing created virtual interface...\n");
