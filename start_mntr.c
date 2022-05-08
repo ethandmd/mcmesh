@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
         return -1;
     }
     printf("Setting monitor interface channel...\n");
-    set_if_chan(&nl, v_info.if_index, 2442);
+    set_if_chan(&nl, v_info.if_index, CHANNEL_11);
     printf("\n");
     //set_iftype_mntr(&nl, &v_info);
 

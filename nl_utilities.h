@@ -23,6 +23,25 @@ struct if_info {
     int if_type;
 };
 
+/* 
+* 2.4 (assumes 20MHz width) & 5 (assues 80MHz width) GHz channel frequencies. 
+* Yes, these channels may be used without restriction in NA.
+*/
+enum wifi_chan_freqs {
+    CHANNEL_1 = 2412,
+    CHANNEL_6 = 2437,
+    CHANNEL_11 = 2462,
+    CHANNEL_36 = 5180,
+    CHANNEL_40 = 5200,
+    CHANNEL_44 = 5220,
+    CHANNEL_48 = 5240,
+    CHANNEL_149 = 5745,
+    CHANNEL_153 = 5765,
+    CHANNEL_157 = 5785,
+    CHANNEL_161 = 5805,
+    CHANNEL_165 = 5825
+};
+
 void nl_init(nl_handle *nl);
 
 void nl_cleanup(nl_handle *nl);
@@ -45,6 +64,6 @@ int delete_if(nl_handle *nl, int if_index);
 
 int create_new_if(nl_handle *nl, const char *if_type, int wiphy, const char *if_name);
 
-int set_if_chan(nl_handle *nl, int if_index, int frequency);
+int set_if_chan(nl_handle *nl, int if_index, enum wifi_chan_freqs freq);
 
 #endif

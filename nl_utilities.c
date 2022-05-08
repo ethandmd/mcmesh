@@ -579,7 +579,7 @@ int handler_create_new_if(nl_handle *nl, enum nl80211_iftype if_type, int wiphy,
 }
 
 /**/
-int handler_set_if_chan(nl_handle *nl, int if_index, int frequency) {
+int handler_set_if_chan(nl_handle *nl, int if_index, enum wifi_chan_freqs freq) {
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
         fprintf(stderr, "Could not allovate netlink message.\n");
@@ -595,8 +595,12 @@ int handler_set_if_chan(nl_handle *nl, int if_index, int frequency) {
         NL80211_CMD_SET_CHANNEL,
         0
     );
-    nla_put_u32(msg, NL80211_ATTR_WIPHY_FREQ, frequency);
-    nla_put_u32(msg, NL80211_ATTR_CHANNEL_WIDTH, NL80211_CHAN_WIDTH_20);
+    nla_put_u32(msg, NL80211_ATTR_WIPHY_FREQ, freq);
+    if (freq > CHANNEL_11) {
+        nla_put_u32(msg, NL80211_ATTR_CHANNEL_WIDTH, NL80211_CHAN_WIDTH_80); //Consider 40MHz for 5GHz.
+    } else {
+        nla_put_u32(msg, NL80211_ATTR_CHANNEL_WIDTH, NL80211_CHAN_WIDTH_20);
+    }
     nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_index);
     
     int ret = nl_send_auto(nl->sk, msg);
@@ -658,7 +662,7 @@ int create_new_if(nl_handle *nl, const char *if_type, int wiphy, const char *if_
 /*
 *   Set wiphy channel frequency (MHz) and width (MHz)
 */
-int set_if_chan(nl_handle *nl, int if_index, int frequency) {
-    return handler_set_if_chan(nl, if_index, frequency);
+int set_if_chan(nl_handle *nl, int if_index, enum wifi_chan_freqs freq) {
+    return handler_set_if_chan(nl, if_index, freq);
 }
 
