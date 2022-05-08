@@ -114,30 +114,6 @@ static enum nl80211_iftype convert_iftype(const char *base_iftype) {
     }
 }
 
-/*
-*   Allocates a netlink message. Fills generic netlink message header for nl80211
-*   family (hardcoded), and flags, command params. Freeing memory is caller's responsibility. 
-*/
-// static int build_genlmsg(nl_handle *nl, struct nl_msg *msg, enum nl80211_commands cmd, int flags) {
-//     msg = nlmsg_alloc();
-//     if (!msg) {
-//         fprintf(stderr, "Could not allocate netlink message.\n");
-//         return -1;
-//     }
-//     //Add generic netlink header to netlink message.
-//     genlmsg_put(
-//         msg,                        //nl msg object
-//         0,                          //nl port / auto (0 is kernel)
-//         0,                          //seq no / auto 
-//         nl->nl80211_id,             //numeric family id
-//         0,                          //header length in bytes
-//         flags,                      //flags
-//         cmd,                        //command
-//         0                           //version
-//     );
-//     return 0;
-// }
-
 /* 
 *   Callback function for getting interface type. 
 *   Notice that nla_parse iterates over the attr stream and stores a ptr to
@@ -183,7 +159,7 @@ static int callback_if_info(struct nl_msg *msg, void *arg) {
 *   and use custom callback to filter the resulting stream of attributes for the iftype.
 */
 
-static int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index, int phy_id) {
+int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index, int phy_id) {
     int ret;
     int err;
     int nl_flag = 0;
@@ -253,11 +229,11 @@ static int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index
             if (err < 0) {
                 fprintf(stderr, "Could not pull info from dump.\n");
             }
-            if (info->if_name && (info->if_name) == 0) {
-                printf("Successfully turned off %s\n", info->if_name);
-            } else {
-                printf("Failed to turn off %s\n", info->if_name);
-            }
+        //     if (info->if_name && (info->if_name) == 0) {
+        //         printf("Successfully turned off %s\n", info->if_name);
+        //     } else {
+        //         printf("Failed to turn off %s\n", info->if_name);
+        //     }
         }
     }
     while (ret > 0) {
@@ -279,7 +255,7 @@ static int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index
  *  Phy info -- find supported interface modes.
  *  
 */
-static int callback_phy_info(struct nl_msg *msg, void *arg) {
+int callback_phy_info(struct nl_msg *msg, void *arg) {
     struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];
     struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
     struct nlattr *nl_mode;
@@ -485,7 +461,7 @@ int set_if_down(const char *if_name) {
  * Helper function that sets the REQUIRED flags (nl80211 attrs)  
  * to a netlink message.
 */
-static int add_monitor_flags(struct nl_msg *msg) {
+int add_monitor_flags(struct nl_msg *msg) {
     printf("Adding monitor flags...\n\t(none)\n");
     struct nl_msg *flag_msg = nlmsg_alloc();
     if (!flag_msg) {
@@ -503,48 +479,48 @@ static int add_monitor_flags(struct nl_msg *msg) {
 /*
 *   Set if type from userspace requires iftype and ifindex.
 */
-// int handler_set_if_type(nl_handle *nl, enum nl80211_iftype *type, int if_index) {
-//     struct nl_msg *msg = nlmsg_alloc();
-//     if (!msg) {
-//         fprintf(stderr, "Could not allocate netlink message.\n");
-//         return -1;
-//     }
-//     //Add generic netlink header to netlink message.
-//     genlmsg_put(
-//         msg,                        //nl msg object
-//         0,                          //nl port / auto (0 is kernel)
-//         0,                          //seq no / auto 
-//         nl->nl80211_id,             //numeric family id
-//         0,                          //header length in bytes
-//         0,                          //flags
-//         NL80211_CMD_SET_INTERFACE,  //command
-//         0                           //version
-//     );
-//     //Specify ifindex for nl80211 cmd
-//     nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_index);
-//     //Specify monitor iftype for nl80211 cmd
-//     nla_put_u32(msg, NL80211_ATTR_IFTYPE, *type);
-//     //Set monitor mode flags.
-//     add_monitor_flags(msg);
+int handler_set_if_type(nl_handle *nl, enum nl80211_iftype type, int if_index) {
+    struct nl_msg *msg = nlmsg_alloc();
+    if (!msg) {
+        fprintf(stderr, "Could not allocate netlink message.\n");
+        return -1;
+    }
+    //Add generic netlink header to netlink message.
+    genlmsg_put(
+        msg,                        //nl msg object
+        0,                          //nl port / auto (0 is kernel)
+        0,                          //seq no / auto 
+        nl->nl80211_id,             //numeric family id
+        0,                          //header length in bytes
+        0,                          //flags
+        NL80211_CMD_SET_INTERFACE,  //command
+        0                           //version
+    );
+    //Specify ifindex for nl80211 cmd
+    nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_index);
+    //Specify monitor iftype for nl80211 cmd
+    nla_put_u32(msg, NL80211_ATTR_IFTYPE, type);
+    //Set monitor mode flags.
+    add_monitor_flags(msg);
 
-//     //Send message
-//     int ret = nl_send_auto(nl->sk, msg);
-//     if (ret < 0) {
-//         fprintf(stderr, "Could not send netlink message to set iftype to monitor.\n");
-//         nlmsg_free(msg);
-//         return -1;
-//     }
+    //Send message
+    int ret = nl_send_auto(nl->sk, msg);
+    if (ret < 0) {
+        fprintf(stderr, "Could not send netlink message to set iftype to monitor.\n");
+        nlmsg_free(msg);
+        return -1;
+    }
 
-//     //Clean up
-//     nlmsg_free(msg);
+    //Clean up
+    nlmsg_free(msg);
     
-//     return 0;
-// }
+    return 0;
+}
 
 /*
 *   Delete if from userspace only requires if index.
 */
-static int handler_delete_if(nl_handle *nl, int if_index) {
+int handler_delete_if(nl_handle *nl, int if_index) {
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
         fprintf(stderr, "Could not allovate netlink message.\n");
@@ -580,7 +556,7 @@ static int handler_delete_if(nl_handle *nl, int if_index) {
 *   -NL80211_ATTR_IFTYPE
 *   -NL80211_ATTR_IFNAME
 */
-static int handler_create_new_if(nl_handle *nl, enum nl80211_iftype if_type, int wiphy, const char *ifname) {
+int handler_create_new_if(nl_handle *nl, enum nl80211_iftype if_type, int wiphy, const char *ifname) {
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
         fprintf(stderr, "Could not allovate netlink message.\n");
@@ -627,6 +603,15 @@ int get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id, int mon) {
 int get_if_info(nl_handle *nl, struct if_info *info, int if_index, int phy_id) {
     int ret = handler_get_if_info(nl, info, if_index, phy_id);
     return ret;
+}
+
+/*
+ *  Set interface to type.
+*/
+int set_if_type(nl_handle *nl, const char *iftype, int if_index) {
+    printf("Setting interface index %d to %s...\n", if_index, iftype);
+    enum nl80211_iftype type = convert_iftype(iftype);
+    return handler_set_if_type(nl, type, if_index);
 }
 
 /*
