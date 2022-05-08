@@ -253,7 +253,7 @@ static int handler_get_if_info(nl_handle *nl, struct if_info *info, int if_index
             if (err < 0) {
                 fprintf(stderr, "Could not pull info from dump.\n");
             }
-            if (set_if_down(info->if_name) == 0) {
+            if (info->if_name && (info->if_name) == 0) {
                 printf("Successfully turned off %s\n", info->if_name);
             } else {
                 printf("Failed to turn off %s\n", info->if_name);
@@ -423,7 +423,7 @@ int compare_if_type(int cmp_iftype, const char *base_iftype) {
     enum nl80211_iftype ct = (enum nl80211_iftype)cmp_iftype;
     enum nl80211_iftype bt = convert_iftype(base_iftype);
     if (bt == NL80211_ATTR_MAX + 1) {
-        fprintf(stderr, "Unable to ascertain valid if type.\n");
+        fprintf(stderr, "Unable to get valid if type.\n");
         return -1;
     }
     if (ct == bt) {
@@ -492,6 +492,7 @@ static int add_monitor_flags(struct nl_msg *msg) {
         return -1;
     }
 
+    /* These three lines commented == monitor flags := none */
     //nla_put_flag(flag_msg, NL80211_MNTR_FLAG_FCSFAIL);
     //nla_put_flag(flag_msg, NL80211_MNTR_FLAG_CONTROL);
     //nla_put_flag(flag_msg, NL80211_MNTR_FLAG_OTHER_BSS);
