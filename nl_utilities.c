@@ -72,7 +72,7 @@ int get_if_index(const char *if_name) {
 *   Callback for error handling.
 *   https://git.kernel.org/pub/scm/linux/kernel/git/jberg/iw.git :: genl.c
 */
-static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg)
+int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg)
 {
 	int *ret = arg;
 	*ret = err->error;
@@ -83,7 +83,7 @@ static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err, void *ar
 // *   Callback for NL_CB_ACK.
 // *   https://git.kernel.org/pub/scm/linux/kernel/git/jberg/iw.git :: genl.c
 // */
-static int ack_handler(struct nl_msg *msg, void *arg)
+int ack_handler(struct nl_msg *msg, void *arg)
 {
 	int *ret = arg;
 	*ret = 0;
@@ -93,7 +93,7 @@ static int ack_handler(struct nl_msg *msg, void *arg)
 /*
 *   Callback for NL_CB_FINISH.
 */
-static int finish_handler(struct nl_msg *msg, void *arg) {
+int finish_handler(struct nl_msg *msg, void *arg) {
       int *ret = arg;
       *ret = 0;
       return NL_SKIP;
@@ -102,7 +102,7 @@ static int finish_handler(struct nl_msg *msg, void *arg) {
 /*
 *   Convert char* to nl80211 enum type.
 */
-static enum nl80211_iftype convert_iftype(const char *base_iftype) {
+enum nl80211_iftype convert_iftype(const char *base_iftype) {
     if (strcmp(base_iftype, "monitor") == 0) {
         return NL80211_IFTYPE_MONITOR;
     } else if (strcmp(base_iftype, "managed") == 0) {
@@ -121,7 +121,7 @@ static enum nl80211_iftype convert_iftype(const char *base_iftype) {
 *   by index type. The maxtype is for backwards compatibility. This is a moment
 *   where I miss how simple ioctl() is, yet can appreciate nl80211.
 */
-static int callback_if_info(struct nl_msg *msg, void *arg) {
+int callback_if_info(struct nl_msg *msg, void *arg) {
     struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
     struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];    //Highest attr num currently defined +1.
     struct if_info *info = arg;
@@ -265,7 +265,7 @@ int callback_phy_info(struct nl_msg *msg, void *arg) {
     if (tb_msg[NL80211_ATTR_WIPHY]) {
         info->phy_id = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY]);
         info->phy_name = nla_get_string(tb_msg[NL80211_ATTR_WIPHY_NAME]);
-        printf("Examining %s\n", info->phy_name);
+        printf("Examining %s:\n", info->phy_name);
     }
 
     if (tb_msg[NL80211_ATTR_SUPPORTED_IFTYPES]) {
