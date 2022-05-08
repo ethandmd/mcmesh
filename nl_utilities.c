@@ -366,14 +366,15 @@ int handler_get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id){
             if (err < 0) {
                 fprintf(stderr, "Could not read results from phy dump.\n");
             }
-            
-            if (info->soft_mon == 1 && info->hard_mon == 1) {
-                printf("Found monitor mode capability on %s...\n", info->phy_name);
-                nlmsg_free(msg);
-                nl_cb_put(cb);
-                return 0;
-            }
         }
+            
+        if (info->soft_mon == 1 && info->hard_mon == 1) {
+            printf("Found monitor mode capability on %s...\n", info->phy_name);
+            nlmsg_free(msg);
+            nl_cb_put(cb);
+            return 0;
+        }
+        printf("This wiphy does not support monitor mode.\n");
     }
     
     // while (ret > 0) {

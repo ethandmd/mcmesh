@@ -32,6 +32,7 @@ struct phy_info {
     int soft_mon;
     int new_if;
     int set_if;
+    struct phy_info *next;
 };
 
 struct if_info {
