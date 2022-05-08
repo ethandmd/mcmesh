@@ -151,6 +151,12 @@ static int callback_if_info(struct nl_msg *msg, void *arg) {
         info->if_type = nla_get_u32(tb_msg[NL80211_ATTR_IFTYPE]);
     }
 
+    if (tb_msg[NL80211_ATTR_WIPHY_FREQ]) {
+        int freq = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_FREQ]);
+        info->if_freq = freq;
+        printf("Found freq: %d\n", freq);
+    }
+
     return NL_SKIP;
 }
 
@@ -359,7 +365,7 @@ int handler_get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id){
                 fprintf(stderr, "Could not read results from phy dump.\n");
             }
 
-            if (info->soft_mon) {
+            if (info->soft_mon == 1 && info->hard_mon == 1) {
                 printf("Found monitor mode capability on %s...\n", info->phy_name);
                 nlmsg_free(msg);
                 nl_cb_put(cb);
@@ -459,8 +465,8 @@ int add_monitor_flags(struct nl_msg *msg) {
 
     /* These three lines commented == monitor flags := none */
     //nla_put_flag(flag_msg, NL80211_MNTR_FLAG_FCSFAIL);
-    //nla_put_flag(flag_msg, NL80211_MNTR_FLAG_CONTROL);
-    //nla_put_flag(flag_msg, NL80211_MNTR_FLAG_OTHER_BSS);
+    nla_put_flag(flag_msg, NL80211_MNTR_FLAG_CONTROL);
+    nla_put_flag(flag_msg, NL80211_MNTR_FLAG_OTHER_BSS);
 
     return nla_put_nested(msg, NL80211_ATTR_MNTR_FLAGS, flag_msg);
 }

@@ -1,6 +1,25 @@
 #ifndef NL_UTILITIES_H
 #define NL_UTILITIES_H
 
+/* 
+* 2.4 (assumes 20MHz width) & 5 (assues 80MHz width) GHz channel frequencies. 
+* Yes, these channels may be used without restriction in NA.
+*/
+enum wifi_chan_freqs {
+    CHANNEL_1 = 2412,
+    CHANNEL_6 = 2437,
+    CHANNEL_11 = 2462,
+    CHANNEL_36 = 5180,
+    CHANNEL_40 = 5200,
+    CHANNEL_44 = 5220,
+    CHANNEL_48 = 5240,
+    CHANNEL_149 = 5745,
+    CHANNEL_153 = 5765,
+    CHANNEL_157 = 5785,
+    CHANNEL_161 = 5805,
+    CHANNEL_165 = 5825
+};
+
 typedef struct {
     int nl80211_id;
     struct nl_sock *sk;
@@ -21,26 +40,10 @@ struct if_info {
     int wdev;
     int wiphy;
     int if_type;
+    int if_freq;
 };
 
-/* 
-* 2.4 (assumes 20MHz width) & 5 (assues 80MHz width) GHz channel frequencies. 
-* Yes, these channels may be used without restriction in NA.
-*/
-enum wifi_chan_freqs {
-    CHANNEL_1 = 2412,
-    CHANNEL_6 = 2437,
-    CHANNEL_11 = 2462,
-    CHANNEL_36 = 5180,
-    CHANNEL_40 = 5200,
-    CHANNEL_44 = 5220,
-    CHANNEL_48 = 5240,
-    CHANNEL_149 = 5745,
-    CHANNEL_153 = 5765,
-    CHANNEL_157 = 5785,
-    CHANNEL_161 = 5805,
-    CHANNEL_165 = 5825
-};
+
 
 void nl_init(nl_handle *nl);
 

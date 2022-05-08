@@ -20,6 +20,7 @@ void print_if_info(struct if_info *info) {
     printf("\tWDEV: %d\n", info->wdev);
     printf("\tWIPHY: %d\n", info->wiphy);
     printf("\tIFTYPE: %d\n", info->if_type);
+    printf("\tIFFREQ: %d\n", info->if_freq);
     printf("\n");
 }
 
@@ -69,13 +70,12 @@ int set_up_mntr_if(nl_handle *nl, struct if_info *v_info, struct if_info *keep_i
     }
 
     get_if_info(nl, keep_if_info, -1, p_info.phy_id);
-    delete_if(nl, keep_if_info->if_index);
+    
+    //Heuristic to avoid trying to delete an interface that doesn't exist.
+    if (keep_if_info->if_index >= 0 && keep_if_info->if_index < 100) {
+        delete_if(nl, keep_if_info->if_index);
+    }
 
-    ////test
-    // char *name;
-    // strcpy(name, keep_if_info->if_name);
-    // strcat(name, "mon");
-    // printf("%s\n", name);
     const char *mntr_iftype = "monitor";
     char *mntr_ifname = "mcmon";
     if (start_mntr_if(nl, v_info, mntr_iftype, p_info.phy_id, mntr_ifname) < 0) {
@@ -98,7 +98,6 @@ int main(int argc, char** argv) {
     if (argc > 1) {
         ITER = strtol(argv[1], NULL , 10);
     }
-    //int if_index = get_if_index(b_info.if_name);
 
     printf("Initializing netlink socket...\n");
     nl_init(&nl);
@@ -112,7 +111,8 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Aborting...\n");
         return -1;
     }
-    printf("Setting monitor interface channel...\n");
+    print_if_info(&keep_if_info);
+    printf("Setting monitor interface channel freq...\n");
     set_if_chan(&nl, v_info.if_index, CHANNEL_11);
     printf("\n");
     //set_iftype_mntr(&nl, &v_info);
