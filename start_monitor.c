@@ -4,6 +4,7 @@
 
 #include "nl_utilities.h"
 #include "mcpcap.h"
+#include "wpcap.h"
 
 void print_interface(struct if_info *info) {
     printf("Interface: %s\n", info->if_name);
@@ -15,17 +16,15 @@ void print_interface(struct if_info *info) {
 }
 
 void init_packet_socket(sk_handle *skh, struct if_info *info) {
-    create_pack_socket(&skh);
+    create_pack_socket(skh);
     if (!skh->sockfd) {
         fprintf(stderr, "Could not allocate new packet socket. Are you running this as root/sudo?\n");
-        return -1;
     }
-    if (bind_pack_socket(&skh, info->if_index) < 0) {
+    if (bind_pack_socket(skh, info->if_index) < 0) {
         fprintf(stderr, "Could not bind packet socket to %s", info->if_name);
-        return -1;
     }
     //Optional...?
-    if (set_if_promisc(&skh, info->if_index) < 0) {
+    if (set_if_promisc(skh, info->if_index) < 0) {
         printf("Could not set %s to promiscuous mode.\n", info->if_name);
     }
 }
@@ -38,7 +37,7 @@ void recv_socket(sk_handle *skh, int ITER) {
     printf("Waiting to receive packets...\n");
     while (count < ITER) {
         count++;
-        if (read_socket(&skh) < 0) {
+        if (read_socket(skh) < 0) {
             fail++;
             printf("Failed to read %d/%d packets.\n", fail, count);
         } else {
@@ -49,19 +48,23 @@ void recv_socket(sk_handle *skh, int ITER) {
 
 int main(int argc, char **argv) {
     nl_handle nl;
-    sk_handle skh;
+    //sk_handle skh;
+    wifi_pcap_t wpt;
     struct if_info keep_if = {0};
     struct if_info new_if = {0};
+    struct bpf_program fp;
+    char filter_expr[] = "";//wlan type mgt subtype beacon";
 
     /*
      *  STEP 0:
      */
-    if (argc < 3) {
+    if (argc < 4) {
         fprintf(stderr, "Require exactly 2 arguments, interface name and ITER.\n");
     }
     keep_if.if_name = argv[1];
     keep_if.if_index = get_if_index(keep_if.if_name);
     int ITER = strtol(argv[2], NULL, 10);
+    int channel = strtol(argv[3], NULL, 10);
 
     /*
      *  STEP 1:
@@ -81,7 +84,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Could not collect configuration for %s.\n", keep_if.if_name);
         return -1;
     }
-    print_interface(&keep_if);
+    //print_interface(&keep_if);
 
 
     /*
@@ -111,7 +114,7 @@ int main(int argc, char **argv) {
             fprintf(stderr, "Could not delete %s...proceeding.\n", keep_if.if_name);
         }
     }
-    set_interface_channel(&nl, new_if.if_index, CHANNEL_6);
+    set_interface_channel(&nl, new_if.if_index, channel);
     get_interface_config(&nl, &new_if, new_if.if_index);
     printf("New monitor mode interface configuration...\n");
     print_interface(&new_if);
@@ -119,13 +122,21 @@ int main(int argc, char **argv) {
     /*
      * STEP 4: Create & configure packet socket.
      */
-    init_packet_socket(&skh, &new_if);
+    //init_packet_socket(&skh, &new_if);
+    int cont = 1;
+    if (init_wpcap(&wpt, new_if.if_name, &fp, filter_expr) < 0) {
+        cont = 0;
+        printf("Unable to open pcap session on %s.\n", new_if.if_name);
+    }
+
 
     /* 
      *  STEP 5: Receive and parse data from the socket.
      */
-    recv_socket(&skh, ITER);
-
+    //recv_socket(&skh, ITER);
+    if (cont) {
+        view_packets(&wpt, ITER);
+    }
 
     /*
      *  STEP 6: Recreate network interface setup and free resources used.
@@ -134,14 +145,14 @@ int main(int argc, char **argv) {
     if (create_new_interface(&nl, keep_if.if_name, NL80211_IFTYPE_STATION, keep_if.wiphy) < 0) {
         fprintf(stderr, "Could not recreate prior existing network interface.\n");
     }
-    print_interface(&keep_if);
     printf("Deleting monitor mode interface...\n");
     if (delete_interface(&nl, new_if.if_index) < 0) {
         fprintf(stderr, "Could not delete %s...\n", new_if.if_name);
     }
     set_if_up(keep_if.if_name);
     nl_cleanup(&nl);
-    cleanup_mcpap(&skh);
+    //cleanup_mcpap(&skh);
+    cleanup_wpcap(&wpt, &fp);
 
     return 0;
 }
