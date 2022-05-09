@@ -1,5 +1,73 @@
 #include "wpcap.h"
-#include "linux/if_ether.h"
+#include <linux/if_ether.h>
+#include <stdint.h>
+
+/*
+ *  From radiotap.org
+ *  De facto (linux?) standard for 80211 rx/tx.
+ *  Mostly just want the offset, don't care as much about fine details at the moment.
+ */
+struct radiotap_header {
+    uint8_t it_rev; //Radiotap version, set to 0?
+    uint8_t it_pad; //Alignment padding -- word boundaries
+    uint8_t it_len; //Get entire radiotap header
+    uint8_t it_present; //Fields present
+};
+
+/*
+ *  802.11ac MAC Frame.
+             subtype-type-version 
+ *  FC mgmt: XXXX   - 00 - 00       (i.e. probe request, beacon, auth/deauth, etc)
+ *  FC ctrl: XXXX   - 01 - 00
+ *  FC data: XXXX   - 10 - 00
+*/
+typedef struct {
+    unsigned char frame_control[2];     /* mgmt, ctrl, data */
+    unsigned char frame_duration[2];
+    unsigned char source[6];            /* Source mac addr */
+    unsigned char destination[6];       /* Destination mac addr */ 
+    unsigned char bssid[6];         /* Filtering (BSS?) ID */
+    unsigned char seq_ctrl[2];          /* frame sequence */
+} mgmt_frame;
+
+/*
+ *  Wikipedia 802.11 mgmt frame subtypes. Only choosingto care about a few of these.
+ */
+enum mgmt_frame_subtype {
+    ASSOCIATION_REQEUST = 0x0,
+    REASSOCIATION_REQUEST = 0x2,
+    PROBE_REQUEST = 0x4,            /* This */
+    TIMING_ADVERTISEMENT = 0x6,
+    BEACON = 0X8,                   /* This */
+    DISASSOCIATION = 0XA,
+    DEAUTHENTICATION = 0XC,
+    AUTHENTICATION = 0XB,
+    ACTION = 0XE,
+    ASSOCATION_RESPONSE = 0X1,
+    REASSOCIATION_RESPONSE = 0X3,
+    PROBE_RESPONSE = 0X5,           /* This */
+    RESERVED = 0X7
+};
+
+const char * mgmt_subtype_strings[] = {
+    "ASSOCIATION_REQEUST",
+    "REASSOCIATION_REQUEST",
+    "PROBE_REQUEST",
+    "TIMING_ADVERTISEMENT",
+    "BEACON",
+    "DISASSOCIATION",
+    "DEAUTHENTICATION",
+    "AUTHENTICATION",
+    "ACTION",
+    "ASSOCATION_RESPONSE",
+    "REASSOCIATION_RESPONSE",
+    "PROBE_RESPONSE",
+    "RESERVED"
+};
+
+void print_mgmt_subtype(unsigned char block) {
+    printf("\nMGMT FRAME SUBTYPE: %s", mgmt_subtype_strings[(int)(block)]);
+}
 
 /*
  *  Simple utility for printing bytes in hex format.
@@ -17,21 +85,26 @@ void print_bytes_hex(void *data, size_t len) {
 }
 
 /*
- *  TODO: Implement timestamp, eth_hdr casts & printing bytes.
+ *  TODO: Implement timestamp, appropriate casts & printing bytes.
  *  Callback function for pcap_loop().
  */
 void packet_callback(u_char *arg, const struct pcap_pkthdr *pkthdr, const u_char *pkt) {
-    // struct tm *time;
-    // char timestr[16];
-    // time_t secs;
+    // struct radiotap_header *rthdr;
+    // rthdr = (struct radiotap_header *)pkt;  //If nothing else from this project: I <3 casting.
+    // int offset = rthdr->it_len;     //Get radiotap offset
 
-    struct ethhdr *hdr = (struct ethhdr *)pkt;
+
+    mgmt_frame *frame = (mgmt_frame *)pkt;
+    if (frame->frame_control[0] == 0) {
+        printf("802.11 MGMT FRAME:\n");
+    }
+    print_mgmt_subtype(frame->frame_control[1]);
     printf("\nSRC ADDR:\t");
-    print_bytes_hex(&(hdr->h_source), 6);
+    print_bytes_hex(&(frame->source), 6);
     printf("\nDEST ADDR:\t");
-    print_bytes_hex(&(hdr->h_dest), 6);
-    printf("\nETH PROTO:\t");
-    print_bytes_hex(&(hdr->h_proto), 1);
+    print_bytes_hex(&(frame->destination), 6);
+    printf("\nBSSID:\t");
+    print_bytes_hex(&(frame->bssid), 6);
     printf("\n");
 }
 
