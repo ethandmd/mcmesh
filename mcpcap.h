@@ -6,7 +6,8 @@ typedef struct {
 } sk_handle;
 
 typedef struct {
-    void *buffer;
+    char buffer[65537];
+    struct msghdr *mh;
 } packet_buffer;
 
 
@@ -36,10 +37,16 @@ struct dumb_cast {
 
 void create_pack_socket(sk_handle *skh);
 
+void cleanup_mcpap(sk_handle *skh);
+
 int bind_pack_socket(sk_handle *skh, int if_index);
 
-void allocate_packet_buffer(packet_buffer *pb);
+int set_if_promisc(sk_handle *skh, int if_index);
 
-int recvpacket(sk_handle *skh, packet_buffer *pb);
+// void allocate_packet_buffer(packet_buffer *pb);
+
+int handle_buffer(packet_buffer *pb, struct msghdr *mh);
+
+int recv_sk_msg(sk_handle *skh, char *buffer, struct msghdr *mh);
 
 #endif
