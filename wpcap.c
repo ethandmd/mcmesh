@@ -24,11 +24,11 @@ struct radiotap_header {
 typedef struct {
     unsigned char frame_control[2];     /* mgmt, ctrl, data */
     unsigned char frame_duration[2];
-    unsigned char source[6];            /* Source mac addr */
-    unsigned char destination[6];       /* Destination mac addr */ 
+    unsigned char source[6];            /* RX mac addr */
+    unsigned char destination[6];       /* TX mac addr */ 
     unsigned char bssid[6];         /* Filtering (BSS?) ID */
     unsigned char seq_ctrl[2];          /* frame sequence */
-} mgmt_frame;
+} ass_req_frame;
 
 /*
  *  Wikipedia 802.11 mgmt frame subtypes. Only choosingto care about a few of these.
@@ -94,7 +94,7 @@ void packet_callback(u_char *arg, const struct pcap_pkthdr *pkthdr, const u_char
     // int offset = rthdr->it_len;     //Get radiotap offset
 
 
-    mgmt_frame *frame = (mgmt_frame *)pkt;
+    ass_req_frame *frame = (ass_req_frame *)pkt;
     if (frame->frame_control[0] == 0) {
         printf("802.11 MGMT FRAME:\n");
     }
