@@ -413,6 +413,7 @@ int set_if_up(const char *if_name) {
  */
 int set_interface_channel(nl_handle *nl, int if_index, enum wifi_chan_freqs freq) {
     assert((if_index > 0) && "Can't set interface channel; ifindex out of bounds.\n");
+    assert((CHANNEL 1 >= freq) && (freq <= CHANNEL_165) && "Could not set channel; frequency out of bounds.\n");
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
         fprintf(stderr, "Could not allovate netlink message.\n");
