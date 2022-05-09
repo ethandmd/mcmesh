@@ -52,22 +52,18 @@ void nl_cleanup(nl_handle *nl);
 
 int get_if_index(const char *if_name);
 
-int get_phy_info(nl_handle *nl, struct phy_info *info, int phy_id);
+enum nl80211_iftype iftype_str_to_num(const char *base_iftype);
 
-int get_if_info(nl_handle *nl, struct if_info *info, int if_index, int phy_id);
+int create_new_interface(nl_handle *nl, char *if_name, int if_index, int wiphy);
 
-int compare_if_type(int cmp_iftype, const char *base_iftype);
+int delete_interface(nl_handle *nl, int if_index);
 
-int set_if_type(nl_handle *nl, const char *iftype, int if_index);
+int get_interface_config(nl_handle *nl, struct if_info *info, int if_index);
 
 int set_if_up(const char *if_name);
 
 int set_if_down(const char *if_name);
 
-int delete_if(nl_handle *nl, int if_index);
-
-int create_new_if(nl_handle *nl, const char *if_type, int wiphy, const char *if_name);
-
-int set_if_chan(nl_handle *nl, int if_index, enum wifi_chan_freqs freq);
+int set_interface_channel(nl_handle *nl, int if_index, enum wifi_chan_freqs freq);
 
 #endif
