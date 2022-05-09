@@ -45,7 +45,7 @@ int bind_pack_socket(sk_handle *skh, int if_index) {
         fprintf(stderr, "Unable to bind socket to if index %d.\n", if_index);
         return -1;
     }
-
+    printf("Bound socket to ifindex: %d.\n", if_index);
     return 0;
 }
 
