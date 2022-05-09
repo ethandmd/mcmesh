@@ -141,7 +141,7 @@ int compare_if_type(unsigned cmp_iftype, const char *base_iftype) {
  * to a netlink message.
 */
 static int add_monitor_flags(struct nl_msg *msg) {
-    printf("Adding monitor flags...\t(none)\n");
+    printf("Adding monitor flags...\n");
     struct nl_msg *flag_msg = nlmsg_alloc();
     if (!flag_msg) {
         return -1;
@@ -150,7 +150,9 @@ static int add_monitor_flags(struct nl_msg *msg) {
     /* These three lines commented == monitor flags := none */
     //nla_put_flag(flag_msg, NL80211_MNTR_FLAG_FCSFAIL);
     nla_put_flag(flag_msg, NL80211_MNTR_FLAG_CONTROL);
+    printf("\t(control flag)\n");
     nla_put_flag(flag_msg, NL80211_MNTR_FLAG_OTHER_BSS);
+    printf("\t(other bss flag)\n");
 
     return nla_put_nested(msg, NL80211_ATTR_MNTR_FLAGS, flag_msg);
 }
