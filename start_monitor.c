@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "nl_utilities.h"
-#include "mcpcap.h"
+//#include "mcpcap.h"
 #include "wpcap.h"
 
 void print_interface(struct if_info *info) {
@@ -15,36 +15,36 @@ void print_interface(struct if_info *info) {
     printf("\tIFFREQ: %d\n", info->if_freq);
 }
 
-void init_packet_socket(sk_handle *skh, struct if_info *info) {
-    create_pack_socket(skh);
-    if (!skh->sockfd) {
-        fprintf(stderr, "Could not allocate new packet socket. Are you running this as root/sudo?\n");
-    }
-    if (bind_pack_socket(skh, info->if_index) < 0) {
-        fprintf(stderr, "Could not bind packet socket to %s", info->if_name);
-    }
-    //Optional...?
-    if (set_if_promisc(skh, info->if_index) < 0) {
-        printf("Could not set %s to promiscuous mode.\n", info->if_name);
-    }
-}
+// void init_packet_socket(sk_handle *skh, struct if_info *info) {
+//     create_pack_socket(skh);
+//     if (!skh->sockfd) {
+//         fprintf(stderr, "Could not allocate new packet socket. Are you running this as root/sudo?\n");
+//     }
+//     if (bind_pack_socket(skh, info->if_index) < 0) {
+//         fprintf(stderr, "Could not bind packet socket to %s", info->if_name);
+//     }
+//     //Optional...?
+//     if (set_if_promisc(skh, info->if_index) < 0) {
+//         printf("Could not set %s to promiscuous mode.\n", info->if_name);
+//     }
+// }
 
-void recv_socket(sk_handle *skh, int ITER) {
-    int fail = 0;
-    int count = 0;
-    skh->buffer = (char *)malloc(65336);     //Going big! Eth MTU is probably fine.
-    memset(skh->buffer, 0, 65536);
-    printf("Waiting to receive packets...\n");
-    while (count < ITER) {
-        count++;
-        if (read_socket(skh) < 0) {
-            fail++;
-            printf("Failed to read %d/%d packets.\n", fail, count);
-        } else {
-            handle_buffer(skh);
-        }
-    }
-}
+// void recv_socket(sk_handle *skh, int ITER) {
+//     int fail = 0;
+//     int count = 0;
+//     skh->buffer = (char *)malloc(65336);     //Going big! Eth MTU is probably fine.
+//     memset(skh->buffer, 0, 65536);
+//     printf("Waiting to receive packets...\n");
+//     while (count < ITER) {
+//         count++;
+//         if (read_socket(skh) < 0) {
+//             fail++;
+//             printf("Failed to read %d/%d packets.\n", fail, count);
+//         } else {
+//             handle_buffer(skh);
+//         }
+//     }
+// }
 
 int main(int argc, char **argv) {
     nl_handle nl;
