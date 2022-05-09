@@ -45,7 +45,7 @@ int set_if_promisc(sk_handle *skh, int if_index);
 
 // void allocate_packet_buffer(packet_buffer *pb);
 
-int handle_buffer(packet_buffer *pb, struct msghdr *mh);
+void handle_buffer(packet_buffer *pb, struct msghdr *mh);
 
 int recv_sk_msg(sk_handle *skh, char *buffer, struct msghdr *mh);
 

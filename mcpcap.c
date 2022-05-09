@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <linux/if_packet.h>    /* sockaddr_ll */
 #include <linux/if_ether.h>     /* ethhdr, eth protos */
+#include <net/if.h>
 #include <arpa/inet.h>          /* htons */
 #include <net/ethernet.h>       /* L2 protocols, ETH_P_* */
 
@@ -26,7 +27,7 @@ void create_pack_socket(sk_handle *skh) {
 }
 
 void cleanup_mcpap(sk_handle *skh) {//, packet_buffer *pktbuff) {
-    close(skh->sockfd);
+    shutdown(skh->sockfd, SHUT_RDWR);
 }
 
 /*
@@ -69,7 +70,7 @@ int set_if_promisc(sk_handle *skh, int if_index) {
 /*
 *   Fill buffer with binary data from socket.
 */
-int handle_buffer(packet_buffer *pb, struct msghdr *mh) {
+void handle_buffer(packet_buffer *pb, struct msghdr *mh) {
     //int n = recvfrom(skh->sockfd, pb->buffer, ETH_FRAME_LEN, 0, NULL, NULL);
     //printf("Received %d bytes.\n", n);
     struct dumb_cast *pkt = (struct dumb_cast *)(pb->buffer);
