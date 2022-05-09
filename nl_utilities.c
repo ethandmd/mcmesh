@@ -119,7 +119,7 @@ enum nl80211_iftype iftype_str_to_num(const char *base_iftype) {
  *  Compare an integer iftype to a string iftype by converting back to
  *  their respective enums.
  */
-int compare_if_type(int cmp_iftype, const char *base_iftype) {
+int compare_if_type(unsigned cmp_iftype, const char *base_iftype) {
     enum nl80211_iftype ct = (enum nl80211_iftype)cmp_iftype;
     enum nl80211_iftype bt = iftype_str_to_num(base_iftype);
     if (bt == NL80211_ATTR_MAX + 1) {
@@ -162,7 +162,7 @@ static int add_monitor_flags(struct nl_msg *msg) {
  *   -NL80211_ATTR_IFTYPE
  *   -NL80211_ATTR_IFNAME
  */
-int create_new_interface(nl_handle *nl, char *if_name, enum nl80211_iftype if_type, int wiphy) {
+int create_new_interface(nl_handle *nl, char *if_name, enum nl80211_iftype if_type, unsigned wiphy) {
     assert((wiphy >= 0) && "Can't create interface; wiphy out of bounds.\n");
 
     struct nl_msg *msg = nlmsg_alloc();
@@ -204,7 +204,7 @@ int create_new_interface(nl_handle *nl, char *if_name, enum nl80211_iftype if_ty
  *  @NL80211_CMD_DEL_INTERFACE:
  *      -NL80211_ATTR_IFINDEX
  */
-int delete_interface(nl_handle *nl, int if_index) {
+int delete_interface(nl_handle *nl, unsigned if_index) {
     assert((if_index >= 0) && "Can't delete if; ifindex out of bounds.\n");
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
@@ -283,7 +283,7 @@ static int callback_if_info(struct nl_msg *msg, void *arg) {
  *  @NL80211_CMD_GET_INTERFACE:
  *      NL80211_ATTR_IFINDEX
  */
-int get_interface_config(nl_handle *nl, struct if_info *info, int if_index) {
+int get_interface_config(nl_handle *nl, struct if_info *info, unsigned if_index) {
     assert((if_index >= 0) && "Can't get interface config; ifindex out of bounds.\n");
     int ret;
     struct nl_msg *msg = nlmsg_alloc();
@@ -412,9 +412,9 @@ int set_if_down(const char *if_name) {
  *      -NL80211_ATTR_WIPHY_FREQ
  *      -attrs for channel width (NL80211_ATTR_CHANNEL_WIDTH)
  */
-int set_interface_channel(nl_handle *nl, int if_index, enum wifi_chan_freqs freq) {
+int set_interface_channel(nl_handle *nl, unsigned if_index, enum wifi_chan_freqs freq) {
     assert((if_index >= 0) && "Can't set interface channel; ifindex out of bounds.\n");
-    assert((CHANNEL_1 >= freq) && (freq <= CHANNEL_165) && "Could not set channel; frequency out of bounds.\n");
+    assert((CHANNEL_1 <= freq) && (freq <= CHANNEL_165) && "Could not set channel; frequency out of bounds.\n");
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
         fprintf(stderr, "Could not allocate netlink message.\n");
@@ -445,6 +445,8 @@ int set_interface_channel(nl_handle *nl, int if_index, enum wifi_chan_freqs freq
         return -1;
     }
     nlmsg_free(msg);
+
+    printf("Successfully set ifindex %d to %dMHz.\n", if_index, freq);
     return 0; 
 }
 
@@ -454,7 +456,7 @@ int set_interface_channel(nl_handle *nl, int if_index, enum wifi_chan_freqs freq
  *      -NL80211_ATTR_IFINDEX
  *      -NL80211_ATTR_IFTYPE
  */
-int set_interface_type(nl_handle *nl, enum nl80211_iftype type, int if_index) {
+int set_interface_type(nl_handle *nl, enum nl80211_iftype type, unsigned if_index) {
     assert((if_index >= 0) && "Can't set interface channel; ifindex out of bounds.\n");
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {

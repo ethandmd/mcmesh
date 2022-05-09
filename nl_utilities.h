@@ -28,22 +28,22 @@ typedef struct {
 } nl_handle;
 
 struct phy_info {
-    int phy_id;
+    unsigned phy_id;
     char *phy_name;
-    int hard_mon;
-    int soft_mon;
-    int new_if;
-    int set_if;
+    unsigned hard_mon;
+    unsigned soft_mon;
+    unsigned new_if;
+    unsigned set_if;
     struct phy_info *next;
 };
 
 struct if_info {
     char *if_name;
-    int if_index;
-    int wdev;
-    int wiphy;
-    int if_type;
-    int if_freq;
+    unsigned if_index;
+    unsigned wdev;
+    unsigned wiphy;
+    unsigned if_type;
+    unsigned if_freq;
 };
 
 
@@ -56,18 +56,18 @@ int get_if_index(char *if_name);
 
 enum nl80211_iftype iftype_str_to_num(const char *base_iftype);
 
-int create_new_interface(nl_handle *nl, char *if_name, enum nl80211_iftype if_type, int wiphy);
+int create_new_interface(nl_handle *nl, char *if_name, enum nl80211_iftype if_type, unsigned wiphy);
 
-int delete_interface(nl_handle *nl, int if_index);
+int delete_interface(nl_handle *nl, unsigned if_index);
 
-int get_interface_config(nl_handle *nl, struct if_info *info, int if_index);
+int get_interface_config(nl_handle *nl, struct if_info *info, unsigned if_index);
 
 int set_if_up(const char *if_name);
 
 int set_if_down(const char *if_name);
 
-int set_interface_channel(nl_handle *nl, int if_index, enum wifi_chan_freqs freq);
+int set_interface_channel(nl_handle *nl, unsigned if_index, enum wifi_chan_freqs freq);
 
-int set_interface_type(nl_handle *nl, enum nl80211_iftype type, int if_index);
+int set_interface_type(nl_handle *nl, enum nl80211_iftype type, unsigned if_index);
 
 #endif
