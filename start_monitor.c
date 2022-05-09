@@ -48,6 +48,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Could not collect configuration for %s.\n", keep_if.if_name);
         return -1;
     }
+    print_interface(&keep_if);
 
 
     /*
@@ -66,14 +67,16 @@ int main(int argc, char **argv) {
             return -1;
         }
         set_if_up(keep_if.if_name);
-    }
-    set_if_up(new_if.if_name);
-    get_interface_config(&nl, &new_if, new_if.if_index);
-    printf("Displaying newly created interface configuration...\n");
-    print_interface(&new_if);
-    printf("Deleting %s...\n", keep_if.if_name);
-    if (delete_interface(&nl, keep_if.if_index) < 0) {
-        fprintf(stderr, "Could not delete %s...proceeding.\n", keep_if.if_name);
+    } else {
+        set_if_up(new_if.if_name);
+        new_if.if_index = get_if_index(new_if.if_name);
+        get_interface_config(&nl, &new_if, new_if.if_index);
+        printf("New monitor mode interface configuration...\n");
+        print_interface(&new_if);
+        printf("Deleting %s...\n", keep_if.if_name);
+        if (delete_interface(&nl, keep_if.if_index) < 0) {
+            fprintf(stderr, "Could not delete %s...proceeding.\n", keep_if.if_name);
+        }
     }
 
     /*
@@ -100,13 +103,19 @@ int main(int argc, char **argv) {
     /*
      *  STEP 6: Recreate network interface setup and free resources used.
      */
-    if (delete_interface(&nl, new_if.if_index) < 0) {
-        fprintf(stderr, "Could not delete %s...\n", new_if.if_name);
-    }
+
     if (create_new_interface(&nl, keep_if.if_name, keep_if.if_index, keep_if.wiphy) < 0) {
         fprintf(stderr, "Could not recreate prior existing network interface.\n");
     }
+    print_interface(&keep_if);
+    if (delete_interface(&nl, new_if.if_index) < 0) {
+        fprintf(stderr, "Could not delete %s...\n", new_if.if_name);
+    }
+    printf("LINE 111\n");
     set_if_up(keep_if.if_name);
+    printf("LINE 113\n");
     nl_cleanup(&nl);
     cleanup_mcpap(&skh);
+
+    return 0;
 }

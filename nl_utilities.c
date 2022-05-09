@@ -141,7 +141,7 @@ int compare_if_type(int cmp_iftype, const char *base_iftype) {
  * to a netlink message.
 */
 static int add_monitor_flags(struct nl_msg *msg) {
-    printf("Adding monitor flags...\n\t(none)\n");
+    printf("Adding monitor flags...\t(none)\n");
     struct nl_msg *flag_msg = nlmsg_alloc();
     if (!flag_msg) {
         return -1;
@@ -357,22 +357,22 @@ int set_if_up(const char *if_name) {
     strncpy(ifr.ifr_name, if_name, IFNAMSIZ);
     /* Read the tea leaves. */
     if (ioctl(sockfd, SIOCGIFFLAGS, &ifr) < 0) {
-        fprintf(stderr, "Could not get device flags.\n");
+        fprintf(stderr, "Could not get device flags for %s.\n", if_name);
         return -1;
     }
     /* Do the tea leaves say this interface is arleady up and running? */
     if (ifr.ifr_flags & IFF_UP) {
-        printf("Interface is already up.\n");
+        printf("%s is already up.\n", if_name);
         return 0;
     }
     /* If not, we need to set the interface flags! */
     ifr.ifr_flags |= IFF_UP;
     
     if (ioctl(sockfd, SIOCSIFFLAGS, &ifr) < 0) {
-        printf("Could not set device flags.\n");
+        printf("Could not set device flags up for %s.\n", if_name);
         return -1;
     }
-    printf("Successfully set interface up.\n");
+    printf("Successfully set %s up.\n", if_name);
     return 0;
 }
 
@@ -383,22 +383,22 @@ int set_if_down(const char *if_name) {
     strncpy(ifr.ifr_name, if_name, IFNAMSIZ);
     /* Read the tea leaves. */
     if (ioctl(sockfd, SIOCGIFFLAGS, &ifr) < 0) {
-        fprintf(stderr, "Could not get device flags.\n");
+        fprintf(stderr, "Could not get device flags for %s.\n", if_name);
         return -1;
     }
     /* Do the tea leaves say this interface is arleady up and running? */
     if (ifr.ifr_flags & ~IFF_UP) {
-        printf("Interface is already up.\n");
+        printf("%s is already down.\n", if_name);
         return 0;
     }
     /* If not, we need to set the interface flags! */
     ifr.ifr_flags &= ~IFF_UP;
     
     if (ioctl(sockfd, SIOCSIFFLAGS, &ifr) < 0) {
-        printf("Could not set device flags.\n");
+        printf("Could not set device flags down for %s.\n", if_name);
         return -1;
     }
-    printf("Successfully set interface up.\n");
+    printf("Successfully set interface down.\n");
     return 0;
 }
 //                  END IOCTL CALLS
