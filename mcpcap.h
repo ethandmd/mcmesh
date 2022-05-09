@@ -3,12 +3,15 @@
 
 typedef struct {
     int sockfd;
+    char *buffer;
 } sk_handle;
 
-typedef struct {
-    char buffer[65537];
-    struct msghdr *mh;
-} packet_buffer;
+// typedef struct {
+//     char buffer[65537];
+//     struct msghdr *mh;
+//     char *msg_end;
+//     char *msg_ptr;
+// } packet_buffer;
 
 
 // /*
@@ -45,8 +48,8 @@ int set_if_promisc(sk_handle *skh, int if_index);
 
 // void allocate_packet_buffer(packet_buffer *pb);
 
-void handle_buffer(packet_buffer *pb, struct msghdr *mh);
+void handle_buffer(sk_handle *skh);
 
-int recv_sk_msg(sk_handle *skh, char *buffer, struct msghdr *mh);
+int read_socket(sk_handle *skh);
 
 #endif

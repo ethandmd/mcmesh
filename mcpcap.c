@@ -70,10 +70,8 @@ int set_if_promisc(sk_handle *skh, int if_index) {
 /*
 *   Fill buffer with binary data from socket.
 */
-void handle_buffer(packet_buffer *pb, struct msghdr *mh) {
-    //int n = recvfrom(skh->sockfd, pb->buffer, ETH_FRAME_LEN, 0, NULL, NULL);
-    //printf("Received %d bytes.\n", n);
-    struct dumb_cast *pkt = (struct dumb_cast *)(pb->buffer);
+void handle_buffer(sk_handle *skh) {
+    struct dumb_cast *pkt = (struct dumb_cast *)(skh->buffer);
     printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\t",pkt->one_one[0],pkt->one_one[1],pkt->one_one[2],pkt->one_one[3],pkt->one_one[4],pkt->one_one[5],pkt->one_one[6],pkt->one_one[7]);
     printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",pkt->one_two[0],pkt->one_two[1],pkt->one_two[2],pkt->one_two[3],pkt->one_two[4],pkt->one_two[5],pkt->one_two[6],pkt->one_two[7]);
     printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\t",pkt->two_one[0],pkt->two_one[1],pkt->two_one[2],pkt->two_one[3],pkt->two_one[4],pkt->two_one[5],pkt->two_one[6],pkt->one_two[7]);
@@ -85,25 +83,24 @@ void handle_buffer(packet_buffer *pb, struct msghdr *mh) {
 
 
 /*
+ *  Gone through some back and forth on a good way to read packets.
+ *  Between memory mapped ring buffer, recvmsg w/ msghdr and cmsghdr, 
+ *  or just a recv/recvfrom.
  *  msghdr: http://stackoverflow.com/questions/32593697/ddg#32594071
+ *  
  */
-int recv_sk_msg(sk_handle *skh, char *buffer, struct msghdr *mh) {
-    struct sockaddr_ll addr;
-    struct iovec iov[1];
-    iov[0].iov_base = buffer;
-    iov[0].iov_len = sizeof(buffer);
-
-    mh->msg_name = &addr;
-    mh->msg_namelen = sizeof(addr);
-    mh->msg_iov = iov;
-    mh->msg_iovlen = 1;
-
-    int n = recvmsg(skh->sockfd, mh, 0);
+int read_socket(sk_handle *skh) {
+    //Requires buffer to be malloc'd
+    skh->buffer = malloc(1514); //eth MTU size of 1500...
+    struct sockaddr src;
+    socklen_t src_len = sizeof(src);
+    //Read "n" bytes into "buffer" from socket.
+    int n = recvfrom(skh->sockfd, skh->buffer, sizeof(skh->buffer), 0, (struct sockaddr *)&src, &src_len);
     if (n < 0) {
         fprintf(stderr, "Could not read msg from socket.\n");
         return -1;
     }
     printf("Received %d bytes.\n", n);
 
-    return n;
+    return 0;
 }
