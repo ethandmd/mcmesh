@@ -56,7 +56,7 @@ void nl_cleanup(nl_handle *nl) {
 /*
  *   Use net/if.h name to index conversion.
  */
-int get_if_index(const char *if_name) {
+int get_if_index(char *if_name) {
     int if_index = if_nametoindex(if_name);
 
     if (if_index < 0) {
@@ -166,7 +166,7 @@ int create_new_interface(nl_handle *nl, char *if_name, int if_index, int wiphy) 
     assert((wiphy > 0) && "Can't create interface; wiphy out of bounds.\n");
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
-        fprintf(stderr, "Could not allovate netlink message.\n");
+        fprintf(stderr, "Could not allocate netlink message.\n");
         return -1;
     }
     genlmsg_put(
@@ -207,7 +207,7 @@ int handler_delete_if(nl_handle *nl, int if_index) {
     assert((if_index > 0) && "Can't delete if; ifindex out of bounds.\n");
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
-        fprintf(stderr, "Could not allovate netlink message.\n");
+        fprintf(stderr, "Could not allocate netlink message.\n");
         return -1;
     }
     genlmsg_put(
@@ -404,7 +404,7 @@ int set_if_up(const char *if_name) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                  BEGIN SET INTERFACE CHANNEL FUNCTION
+//                  BEGIN SET INTERFACE ATTRS
 
 /*
  *  @NL80211_CMD_SET_CHANNEL:
@@ -416,7 +416,7 @@ int set_interface_channel(nl_handle *nl, int if_index, enum wifi_chan_freqs freq
     assert((CHANNEL 1 >= freq) && (freq <= CHANNEL_165) && "Could not set channel; frequency out of bounds.\n");
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
-        fprintf(stderr, "Could not allovate netlink message.\n");
+        fprintf(stderr, "Could not allocate netlink message.\n");
         return -1;
     }
     genlmsg_put(
@@ -439,13 +439,50 @@ int set_interface_channel(nl_handle *nl, int if_index, enum wifi_chan_freqs freq
     
     int ret = nl_send_auto(nl->sk, msg);
     if (ret < 0) {
-        fprintf(stderr, "Could not send netlink message to del if.\n");
+        fprintf(stderr, "Could not send netlink message to set if channel.\n");
         nlmsg_free(msg);
         return -1;
     }
     nlmsg_free(msg);
     return 0; 
 }
-//                  END SET INTERFACE CHANNEL FUNCTION
+
+
+/*
+ *  @NL80211_CMD_SET_INTERFACE:
+ *      -NL80211_ATTR_IFINDEX
+ *      -NL80211_ATTR_IFTYPE
+ */
+int set_interface_type(nl_handle *nl, enum nl80211_iftype type, int if_index) {
+    assert((if_index > 0) && "Can't set interface channel; ifindex out of bounds.\n");
+    assert(NL80211_IFTYPE_UNSPECIFIED(>= type) && (type <= NL80211_IFTYPE_MAX) && "Could not set channel; iftype out of bounds.\n");
+    struct nl_msg *msg = nlmsg_alloc();
+    if (!msg) {
+        fprintf(stderr, "Could not allocate netlink message.\n");
+        return -1;
+    }
+    genlmsg_put(
+        msg,
+        0,
+        0,
+        nl->nl80211_id,
+        0,
+        0,
+        NL80211_CMD_SET_INTERFACE,
+        0
+    );
+    nla_put_u32(msg, NL80211_ATTR_IFTYPE, type);
+    nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_index);
+    
+    int ret = nl_send_auto(nl->sk, msg);
+    if (ret < 0) {
+        fprintf(stderr, "Could not send netlink message to set iftype.\n");
+        nlmsg_free(msg);
+        return -1;
+    }
+    nlmsg_free(msg);
+    return 0; 
+}
+//                  END SET INTERFACE ATTRS
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 

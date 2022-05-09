@@ -1,6 +1,8 @@
 #ifndef NL_UTILITIES_H
 #define NL_UTILITIES_H
 
+#include <linux/nl80211.h>
+
 /* 
 * 2.4 (assumes 20MHz width) & 5 (assues 80MHz width) GHz channel frequencies. 
 * Yes, these channels may be used without restriction in NA.
@@ -50,7 +52,7 @@ void nl_init(nl_handle *nl);
 
 void nl_cleanup(nl_handle *nl);
 
-int get_if_index(const char *if_name);
+int get_if_index(char *if_name);
 
 enum nl80211_iftype iftype_str_to_num(const char *base_iftype);
 
@@ -65,5 +67,7 @@ int set_if_up(const char *if_name);
 int set_if_down(const char *if_name);
 
 int set_interface_channel(nl_handle *nl, int if_index, enum wifi_chan_freqs freq);
+
+int set_interface_type(nl_handle *nl, enum nl80211_iftype type, int if_index);
 
 #endif
