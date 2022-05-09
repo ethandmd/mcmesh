@@ -9,7 +9,7 @@
  * Test netlink utilities for fetching an interface's config, creating a new interface,
  * and deleting an interface.
  */
-static int test_get_create_del_interface(nl_handle *nl) {
+static int  test_get_create_del_interface(nl_handle *nl) {
     struct if_info test_info;
     struct if_info info = {
         .if_name = "MCTEST007",
@@ -38,5 +38,15 @@ static int test_get_create_del_interface(nl_handle *nl) {
 
     /* Cleanup */
     delete_interface(nl, info.if_index);
+
+    return 0;
+}
+
+int main () {
+    nl_handle nl;
+    nl_init(&nl);
+    int ret = test_get_create_del_interface(&nl);
+    nl_cleanup(&nl);
+    assert(ret == 0);
 }
 
