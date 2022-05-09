@@ -17,8 +17,8 @@ void print_interface(struct if_info *info) {
 int main(int argc, char **argv) {
     nl_handle nl;
     sk_handle skh;
-    struct if_info keep_if;
-    struct if_info new_if;
+    struct if_info keep_if = {0};
+    struct if_info new_if = {0};
 
     /*
      *  STEP 0:
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
             fprintf(stderr, "Could not delete %s...proceeding.\n", keep_if.if_name);
         }
     }
-    set_interface_channel(&nl, new_if.if_freq, CHANNEL_6);
+    set_interface_channel(&nl, new_if.if_index, CHANNEL_6);
     get_interface_config(&nl, &new_if, new_if.if_index);
     printf("New monitor mode interface configuration...\n");
     print_interface(&new_if);
@@ -113,9 +113,7 @@ int main(int argc, char **argv) {
     if (delete_interface(&nl, new_if.if_index) < 0) {
         fprintf(stderr, "Could not delete %s...\n", new_if.if_name);
     }
-    printf("LINE 111\n");
     set_if_up(keep_if.if_name);
-    printf("LINE 113\n");
     nl_cleanup(&nl);
     cleanup_mcpap(&skh);
 
