@@ -34,6 +34,7 @@ $ sudo dnf install libnl3-devel
 + Libnl: [Libnl developer docs](https://www.infradead.org/~tgr/libnl/doc/core.html)
 + iw (J. Berg.): [iw git repo](http://git.kernel.org/?p=linux/kernel/git/jberg/iw.git)
 + Libpcap nl80211 examples: [pcap-linux](https://github.com/the-tcpdump-group/libpcap/blob/master/pcap-linux.c)
++ Kismet Wireless [rf_kill linux](https://github.com/kismetwireless/kismet/blob/master/capture_linux_wifi/linux_wireless_rfkill.c)
 + Link layer headers from [libpcap](https://www.tcpdump.org/linktypes.html)
 + Wireshark [Capture Setup](https://gitlab.com/wireshark/wireshark/-/wikis/CaptureSetup/WLAN#linux)
 + Netlink: [RFC 3549](https://datatracker.ietf.org/doc/html/rfc3549) 
