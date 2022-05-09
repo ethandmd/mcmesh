@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
      *  STEP 0:
      */
     if (argc < 4) {
-        fprintf(stderr, "Require exactly 2 arguments, interface name and ITER.\n");
+        fprintf(stderr, "Require exactly 3 arguments, char *interface name; int ITER; int channel.\n");
     }
     keep_if.if_name = argv[1];
     keep_if.if_index = get_if_index(keep_if.if_name);
