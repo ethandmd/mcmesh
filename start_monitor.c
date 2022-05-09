@@ -53,18 +53,18 @@ int main(int argc, char **argv) {
     struct if_info keep_if = {0};
     struct if_info new_if = {0};
     struct bpf_program fp;
-    char filter_expr[] = "";//wlan type mgt subtype beacon";
+    char filter_expr[] = "";//type mgt subtype beacon";
 
     /*
      *  STEP 0:
      */
     if (argc < 4) {
-        fprintf(stderr, "Require exactly 3 arguments, char *interface name; int ITER; int channel.\n");
+        fprintf(stderr, "Require exactly 2 arguments, char *interface name; int ITER;\n");// int channel.\n");
     }
     keep_if.if_name = argv[1];
     keep_if.if_index = get_if_index(keep_if.if_name);
     int ITER = strtol(argv[2], NULL, 10);
-    int channel = strtol(argv[3], NULL, 10);
+    //int channel = strtol(argv[3], NULL, 10);
 
     /*
      *  STEP 1:
@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
             fprintf(stderr, "Could not delete %s...proceeding.\n", keep_if.if_name);
         }
     }
-    set_interface_channel(&nl, new_if.if_index, channel);
+    set_interface_channel(&nl, new_if.if_index, CHANNEL_149);
     get_interface_config(&nl, &new_if, new_if.if_index);
     printf("New monitor mode interface configuration...\n");
     print_interface(&new_if);
