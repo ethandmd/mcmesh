@@ -76,10 +76,10 @@ int main(int argc, char **argv) {
             fprintf(stderr, "Could not delete %s...proceeding.\n", keep_if.if_name);
         }
     }
+    set_interface_channel(&nl, new_if.if_freq, CHANNEL_6);
     get_interface_config(&nl, &new_if, new_if.if_index);
     printf("New monitor mode interface configuration...\n");
     print_interface(&new_if);
-    set_interface_channel(&nl, new_if.if_freq, CHANNEL_6);
     
     /*
      * STEP 4: Create & configure packet socket.
