@@ -1,16 +1,22 @@
-# CC=gcc
-# CFLAGS=-Wall -Wextra -Wpedantic #-Werror
-# LDFLAGS=$(CFLAGS) $(shell pkg-config --libs libnl-genl-3.0)
-# OBJ=$(STC:.c=.o)
-# CFLAGS+=$(shell pkg-config --cflags libnl-genl-3.0)
+# $ gcc start_monitor.c nl_utilities.c mcpcap.c -o start_monitor $(pkg-config --cflags --libs libnl-genl-3.0)
 
-# all: nl_utilities mcpcap sample
+CC=gcc
+#LDFLAGS=$(shell pkg-config --libs libnl-genl-3.0)
+LIBS=-lnl-genl-3 -lnl-3
+CFLAGS=-Wall -Werror -Wpedantic #-Wno-unused-parameter
+CFLAGS += $(shell pkg-config --cflags libnl-genl-3.0)
+#OBJ=start_monitor.o nl_utilities.o mcpcap.o
 
-# sample: nl_utilities.o mcpcap.o sample.o
-# 	$(CC) $(LDFLAGS) -o $@ $^
+all: start_monitor #test_nl_utilities
 
-# %.o: %.c %.h
-# 	$(CC) $(CFLAGS) -c -o $@ $<
+# test_nl_utilities: nl_utilities.o test_nl_utilities.o
+# 	${CC} ${CFLAGS -o $@ -c $< ${LDFLAGS} 
 
-# clean:
-# 	rm -rf *.o nl_utilities mcpcap sample
+start_monitor: nl_utilities.o mcpcap.o start_monitor.o
+	${CC} -o $@ -c $< ${CFLAGS} ${LIBS}
+
+# test: all
+# 	./test_nl_utilities 
+
+clean:
+	rm -rf *.o
