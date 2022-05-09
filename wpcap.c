@@ -1,4 +1,16 @@
 #include "wpcap.h"
+#include "linux/if_ether.h"
+
+/*
+ *  Simple utility for printing bytes in hex format.
+ */
+void print_bytes_hex(void *data, size_t len) {
+    const u_char *bytes = data;
+    size_t count;
+    for (count=0; count < len; count++) {
+        printf("%.2X", bytes[count]);
+    }
+}
 
 /*
  *  TODO: Implement timestamp, eth_hdr casts & printing bytes.
@@ -9,14 +21,13 @@ void packet_callback(u_char *arg, const struct pcap_pkthdr *pkthdr, const u_char
     // char timestr[16];
     // time_t secs;
 
-    printf("Packet callback got called!\n");
-    int len = 0;
-    while (len < pkthdr->len) {
-        printf("%.2X:", *pkt++);
-        //Find new lines for 16-byte width packets.
-        if (!(++len % 16)) printf("\n");
-        len++;
-    }
+    struct ethhdr *hdr = (struct ethhdr *)pkt;
+    printf("\nSRC ADDR:\t");
+    print_bytes_hex(&(hdr->h_source), 6);
+    printf("\nDEST ADDR:\t");
+    print_bytes_hex(&(hdr->h_dest), 6);
+    printf("\nETH PROTO:\t");
+    print_bytes_hex(&(hdr->h_proto), 1);
     printf("\n");
 }
 
