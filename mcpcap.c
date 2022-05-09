@@ -2,6 +2,7 @@
 #include <stdlib.h>     
 #include <string.h>             /* memcpy */
 #include <assert.h>
+#include <stdint.h>
 
 #include <sys/socket.h>
 #include <linux/if_packet.h>    /* sockaddr_ll */
@@ -12,6 +13,18 @@
 
 #include "mcpcap.h"
 
+
+/*
+ *  From radiotap.org
+ *  De facto (linux?) standard for 80211 rx/tx.
+ *  Mostly just want the offset, don't care as much about fine details at the moment.
+ */
+struct radiotap_header {
+    uint8_t it_rev; //Radiotap version, set to 0?
+    uint8_t it_pad; //Alignment padding -- word boundaries
+    uint8_t it_len; //Get entire radiotap header
+    uint8_t it_present; //Fields present
+};
 
 /*
 *   Create socket file descriptor with:
@@ -68,17 +81,19 @@ int set_if_promisc(sk_handle *skh, int if_index) {
 // }
 
 /*
-*   Fill buffer with binary data from socket.
+*   Assumes we are just grabbing mgmt frames.
 */
 void handle_buffer(sk_handle *skh) {
-    struct dumb_cast *pkt = (struct dumb_cast *)(skh->buffer);
-    printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\t",pkt->one_one[0],pkt->one_one[1],pkt->one_one[2],pkt->one_one[3],pkt->one_one[4],pkt->one_one[5],pkt->one_one[6],pkt->one_one[7]);
-    printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",pkt->one_two[0],pkt->one_two[1],pkt->one_two[2],pkt->one_two[3],pkt->one_two[4],pkt->one_two[5],pkt->one_two[6],pkt->one_two[7]);
-    printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\t",pkt->two_one[0],pkt->two_one[1],pkt->two_one[2],pkt->two_one[3],pkt->two_one[4],pkt->two_one[5],pkt->two_one[6],pkt->one_two[7]);
-    printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",pkt->two_two[0],pkt->two_two[1],pkt->two_two[2],pkt->two_two[3],pkt->two_two[4],pkt->two_two[5],pkt->two_two[6],pkt->one_two[7]);
-    printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\t",pkt->three_one[0],pkt->three_one[1],pkt->three_one[2],pkt->three_one[3],pkt->three_one[4],pkt->three_one[5],pkt->three_one[6],pkt->three_one[7]);
-    printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",pkt->three_two[0],pkt->three_two[1],pkt->three_two[2],pkt->three_two[3],pkt->three_two[4],pkt->three_two[5],pkt->three_two[6],pkt->three_two[7]);
-    printf("\n");
+    struct radiotap_header *rthdr = (struct radiotap_header *)skh->buffer;
+    int offset = rthdr->it_len;
+    mgmt_frame *frame = (mgmt_frame *)skh->buffer+offset;
+    if (frame->frame_control != 0) {
+        printf("Uh oh, not a mgmt frame. :/ Let's right every kind of 80211 parser :/...\n");
+    } else {
+        printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",frame->source[0],frame->source[1],frame->source[2],frame->source[3],frame->source[4],frame->source[5]);
+        printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",frame->destination[0],frame->destination[1],frame->destination[2],frame->destination[3],frame->destination[4],frame->destination[5]);
+        printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",frame->bssid[0],frame->bssid[1],frame->bssid[2],frame->bssid[3],frame->bssid[4],frame->bssid[5]);
+    }
 }
 
 
