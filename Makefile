@@ -1,4 +1,4 @@
-# $ gcc start_monitor.c nl_utilities.c wpcap.c -o start_monitor $(pkg-config --cflags --libs libnl-genl-3.0) -lpcap
+# $ gcc start_monitor.c nl_utilities.c wpcap.c mcpcap.c -o start_monitor $(pkg-config --cflags --libs libnl-genl-3.0) -lpcap
 
 CC=gcc
 #LDFLAGS=$(shell pkg-config --libs libnl-genl-3.0)
