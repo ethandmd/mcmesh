@@ -56,7 +56,7 @@ int get_if_index(char *if_name);
 
 enum nl80211_iftype iftype_str_to_num(const char *base_iftype);
 
-int create_new_interface(nl_handle *nl, char *if_name, int if_index, int wiphy);
+int create_new_interface(nl_handle *nl, char *if_name, enum nl80211_iftype if_type, int wiphy);
 
 int delete_interface(nl_handle *nl, int if_index);
 
