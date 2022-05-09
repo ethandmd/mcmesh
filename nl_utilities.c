@@ -163,7 +163,7 @@ static int add_monitor_flags(struct nl_msg *msg) {
  *   -NL80211_ATTR_IFNAME
  */
 int create_new_interface(nl_handle *nl, char *if_name, enum nl80211_iftype if_type, int wiphy) {
-    assert((wiphy > 0) && "Can't create interface; wiphy out of bounds.\n");
+    assert((wiphy >= 0) && "Can't create interface; wiphy out of bounds.\n");
 
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
@@ -205,7 +205,7 @@ int create_new_interface(nl_handle *nl, char *if_name, enum nl80211_iftype if_ty
  *      -NL80211_ATTR_IFINDEX
  */
 int delete_interface(nl_handle *nl, int if_index) {
-    assert((if_index > 0) && "Can't delete if; ifindex out of bounds.\n");
+    assert((if_index >= 0) && "Can't delete if; ifindex out of bounds.\n");
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
         fprintf(stderr, "Could not allocate netlink message.\n");
@@ -284,7 +284,7 @@ static int callback_if_info(struct nl_msg *msg, void *arg) {
  *      NL80211_ATTR_IFINDEX
  */
 int get_interface_config(nl_handle *nl, struct if_info *info, int if_index) {
-    assert((if_index > 0) && "Can't get interface config; ifindex out of bounds.\n");
+    assert((if_index >= 0) && "Can't get interface config; ifindex out of bounds.\n");
     int ret;
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
@@ -413,7 +413,7 @@ int set_if_down(const char *if_name) {
  *      -attrs for channel width (NL80211_ATTR_CHANNEL_WIDTH)
  */
 int set_interface_channel(nl_handle *nl, int if_index, enum wifi_chan_freqs freq) {
-    assert((if_index > 0) && "Can't set interface channel; ifindex out of bounds.\n");
+    assert((if_index >= 0) && "Can't set interface channel; ifindex out of bounds.\n");
     assert((CHANNEL_1 >= freq) && (freq <= CHANNEL_165) && "Could not set channel; frequency out of bounds.\n");
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
@@ -455,7 +455,7 @@ int set_interface_channel(nl_handle *nl, int if_index, enum wifi_chan_freqs freq
  *      -NL80211_ATTR_IFTYPE
  */
 int set_interface_type(nl_handle *nl, enum nl80211_iftype type, int if_index) {
-    assert((if_index > 0) && "Can't set interface channel; ifindex out of bounds.\n");
+    assert((if_index >= 0) && "Can't set interface channel; ifindex out of bounds.\n");
     struct nl_msg *msg = nlmsg_alloc();
     if (!msg) {
         fprintf(stderr, "Could not allocate netlink message.\n");
