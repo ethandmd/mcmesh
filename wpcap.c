@@ -8,7 +8,11 @@ void print_bytes_hex(void *data, size_t len) {
     const u_char *bytes = data;
     size_t count;
     for (count=0; count < len; count++) {
+        if (count == len-1) {
         printf("%.2X", bytes[count]);
+        } else {
+            printf("%.2X:", bytes[count]);
+        }
     }
 }
 
