@@ -46,48 +46,40 @@ int start_mntr_if(nl_handle *nl, struct if_info *info, const char *if_type, int 
     return 0;
 }
 
-int set_iftype_mntr(nl_handle *nl, struct if_info *v_info) {
-    struct phy_info p_info;
+// int set_iftype_mntr(nl_handle *nl, struct if_info *v_info) {
+//     struct phy_info p_info;
 
-    if (get_phy_info(nl, &p_info, -1) < 0) {
-        fprintf(stderr, "Phy info dump failed.\n");
-    }
-    get_if_info(nl, v_info, -1, p_info.phy_id);
-    print_if_info(v_info);
-    set_if_down(v_info->if_name);
-    if (set_if_type(nl, "monitor", v_info->if_index) < 0) {
-        fprintf(stderr, "Failed to put %s into monitor mode.\n", v_info->if_name);
-        return -1;
-    }
-    set_if_up(v_info->if_name);
-}
+//     if (get_phy_info(nl, &p_info, -1) < 0) {
+//         fprintf(stderr, "Phy info dump failed.\n");
+//     }
+//     get_if_info(nl, v_info, -1, p_info.phy_id);
+//     print_if_info(v_info);
+//     set_if_down(v_info->if_name);
+//     if (set_if_type(nl, "monitor", v_info->if_index) < 0) {
+//         fprintf(stderr, "Failed to put %s into monitor mode.\n", v_info->if_name);
+//         return -1;
+//     }
+//     set_if_up(v_info->if_name);
+// }
 
 int set_up_mntr_if(nl_handle *nl, struct if_info *v_info, struct if_info *keep_if_info) {
-    struct phy_info p_info;
-    //Arbitrarily attempt to scan 4 wiphys looking for a monitor mode capable wiphy...Hacky.
-    for (int phyid = 0; phyid < 4; phyid++) {
-        if (get_phy_info(nl, &p_info, phyid) < 0) {
-            fprintf(stderr, "Phy%d info dump failed.\n", phyid);
-        } else if (p_info.hard_mon == 1 || p_info.soft_mon == 1) {
-            p_info.phy_id = phyid;
-            break;
-        }
-    }
+    printf("-----------------Calling {get_if_info}------------------ \n");
+    get_if_info(nl, keep_if_info, keep_if_info->if_index, -1);
+    printf("-----------------Calling {print_if_info}------------------ \n");
+    print_if_info(keep_if_info);
 
-    get_if_info(nl, keep_if_info, -1, p_info.phy_id);
-    
     //Heuristic to avoid trying to delete an interface that doesn't exist.
-    if (keep_if_info->if_index >= 0 && keep_if_info->if_index < 100) {
+    if (keep_if_info->if_index >= 0 && keep_if_info->if_index < 1000) {
         delete_if(nl, keep_if_info->if_index);
     }
 
     const char *mntr_iftype = "monitor";
     char *mntr_ifname = "mcmon";
-    if (start_mntr_if(nl, v_info, mntr_iftype, p_info.phy_id, mntr_ifname) < 0) {
-        fprintf(stderr, "Could not start new monitor interface on phy%d.\n", p_info.phy_id);
+    if (start_mntr_if(nl, v_info, mntr_iftype, keep_if_info->wiphy, mntr_ifname) < 0) {
+        fprintf(stderr, "Could not start new monitor interface on phy%d.\n", keep_if_info->wiphy);
         return -1;
     }
-    get_if_info(nl, v_info, -1, p_info.phy_id);
+    get_if_info(nl, v_info, -v_info->if_index, -1);
     return 0;
 }
 
@@ -98,11 +90,15 @@ int main(int argc, char** argv) {
     packet_buffer pb;
     struct if_info v_info;
     struct if_info keep_if_info;
-    //info.if_name = argv[1];
+    char *if_name;
     int ITER = 5;
-    if (argc > 1) {
-        ITER = strtol(argv[1], NULL , 10);
+    if (argc < 3) {
+        printf("Need two arguments. ITER and IFNAME.\n");
+        return -1;
     }
+    ITER = strtol(argv[1], NULL , 10);
+    if_name = argv[2];
+    keep_if_info.if_index = get_if_index(if_name);
 
     printf("Initializing netlink socket...\n");
     nl_init(&nl);
@@ -116,10 +112,10 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Aborting...\n");
         return -1;
     }
-    print_if_info(&keep_if_info);
     printf("Setting monitor interface channel freq...\n");
-    set_if_chan(&nl, v_info.if_index, CHANNEL_11);
+    set_if_chan(&nl, v_info.if_index, CHANNEL_6);
     printf("\n");
+    //print_if_info(&v_info);
     //set_iftype_mntr(&nl, &v_info);
 
     printf("Creating new packet socket...\n");
@@ -133,11 +129,18 @@ int main(int argc, char** argv) {
          return -1;
     }
 
+    if (set_if_promisc(&skh, v_info.if_index) < 0) {
+        return -1;
+    }
     printf("Waiting to receive packets...\n\n");
-    allocate_packet_buffer(&pb);
+    // allocate_packet_buffer(&pb);
     //Just for testing, remove asap.
-    for (int n=0; n<ITER; n++) {
-        recvpacket(&skh, &pb);
+    for (int i=0; i<ITER; i++) {
+        //recvpacket(&skh, &pb);
+        
+        if (recv_sk_msg(&skh, pb.buffer, pb.mh) < 0) {
+            fprintf(stderr, "Could not read from socket.\n");
+        }
     }
     
     printf("Removing created virtual interface...\n");
