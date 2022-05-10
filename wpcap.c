@@ -155,10 +155,13 @@ void handle_frame(const u_char *pkt, enum frame_type *type) {
     switch (*type) {
         case MGMT:
             handle_mgmt_frame(pkt);
+            break;
         case CTRL:
             handle_ctrl_frame(pkt);
+            break;
         case DATA:
             handle_data_frame(pkt);
+            break;
     }
 }
 
