@@ -1,5 +1,5 @@
-#ifndef MCPCAP_H
-#define MCPCAP_H
+#ifndef HANDLE80211_H
+#define HANDLE80211_H
 
 #include <stdint.h>
 

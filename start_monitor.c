@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "nl_utilities.h"
-//#include "mcpcap.h"
+#include "handle80211.h"
 #include "wpcap.h"
 
 void print_interface(struct if_info *info) {
@@ -15,45 +15,45 @@ void print_interface(struct if_info *info) {
     printf("\tIFFREQ: %d\n", info->if_freq);
 }
 
-// void init_packet_socket(sk_handle *skh, struct if_info *info) {
-//     create_pack_socket(skh);
-//     if (!skh->sockfd) {
-//         fprintf(stderr, "Could not allocate new packet socket. Are you running this as root/sudo?\n");
-//     }
-//     if (bind_pack_socket(skh, info->if_index) < 0) {
-//         fprintf(stderr, "Could not bind packet socket to %s", info->if_name);
-//     }
-//     //Optional...?
-//     if (set_if_promisc(skh, info->if_index) < 0) {
-//         printf("Could not set %s to promiscuous mode.\n", info->if_name);
-//     }
-// }
+void init_packet_socket(sk_handle *skh, struct if_info *info) {
+    create_pack_socket(skh);
+    if (!skh->sockfd) {
+        fprintf(stderr, "Could not allocate new packet socket. Are you running this as root/sudo?\n");
+    }
+    if (bind_pack_socket(skh, info->if_index) < 0) {
+        fprintf(stderr, "Could not bind packet socket to %s", info->if_name);
+    }
+    //Optional...?
+    if (set_if_promisc(skh, info->if_index) < 0) {
+        printf("Could not set %s to promiscuous mode.\n", info->if_name);
+    }
+}
 
-// void recv_socket(sk_handle *skh, int ITER) {
-//     int fail = 0;
-//     int count = 0;
-//     skh->buffer = (char *)malloc(65336);     //Going big! Eth MTU is probably fine.
-//     memset(skh->buffer, 0, 65536);
-//     printf("Waiting to receive packets...\n");
-//     while (count < ITER) {
-//         count++;
-//         if (read_socket(skh) < 0) {
-//             fail++;
-//             printf("Failed to read %d/%d packets.\n", fail, count);
-//         } else {
-//             handle_buffer(skh);
-//         }
-//     }
-// }
+void recv_socket(sk_handle *skh, int ITER) {
+    int fail = 0;
+    int count = 0;
+    skh->buffer = (char *)malloc(65336);     //Going big! Eth MTU is probably fine.
+    memset(skh->buffer, 0, 65536);
+    printf("Waiting to receive packets...\n");
+    while (count < ITER) {
+        count++;
+        if (read_socket(skh) < 0) {
+            fail++;
+            printf("Failed to read %d/%d packets.\n", fail, count);
+        } else {
+            handle_buffer(skh);
+        }
+    }
+}
 
 int main(int argc, char **argv) {
     nl_handle nl;
-    //sk_handle skh;
+    sk_handle skh;
     wifi_pcap_t wpt;
     struct if_info keep_if = {0};
     struct if_info new_if = {0};
-    struct bpf_program fp;
-    char filter_expr[] = "";//type mgt subtype beacon";
+    // struct bpf_program fp;
+    // char filter_expr[] = "";//type mgt subtype beacon";
 
     /*
      *  STEP 0:
@@ -120,21 +120,21 @@ int main(int argc, char **argv) {
     /*
      * STEP 4: Create & configure packet socket.
      */
-    //init_packet_socket(&skh, &new_if);
-    int cont = 1;
-    if (init_wpcap(&wpt, new_if.if_name, &fp, filter_expr) < 0) {
-        cont = 0;
-        printf("Unable to open pcap session on %s.\n", new_if.if_name);
-    }
+    init_packet_socket(&skh, &new_if);
+    // int cont = 1;
+    // if (init_wpcap(&wpt, new_if.if_name, &fp, filter_expr) < 0) {
+    //     cont = 0;
+    //     printf("Unable to open pcap session on %s.\n", new_if.if_name);
+    // }
 
 
     /* 
      *  STEP 5: Receive and parse data from the socket.
      */
-    //recv_socket(&skh, ITER);
-    if (cont) {
-        view_packets(&wpt, ITER);
-    }
+    recv_socket(&skh, ITER);
+    // if (cont) {
+    //     view_packets(&wpt, ITER);
+    // }
 
     /*
      *  STEP 6: Recreate network interface setup and free resources used.
@@ -149,8 +149,8 @@ int main(int argc, char **argv) {
     }
     set_if_up(keep_if.if_name);
     nl_cleanup(&nl);
-    //cleanup_mcpap(&skh);
-    cleanup_wpcap(&wpt, &fp);
+    cleanup_mcpap(&skh);
+    //cleanup_wpcap(&wpt, &fp);
 
     return 0;
 }

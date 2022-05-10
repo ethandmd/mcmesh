@@ -2,7 +2,6 @@
 #include <stdlib.h>     
 #include <string.h>             /* memcpy */
 #include <assert.h>
-#include <stdint.h>
 
 #include <sys/socket.h>
 #include <linux/if_packet.h>    /* sockaddr_ll */
@@ -11,7 +10,7 @@
 #include <arpa/inet.h>          /* htons */
 #include <net/ethernet.h>       /* L2 protocols, ETH_P_* */
 
-#include "mcpcap.h"
+#include "handle80211.h"
 
 /*
  *  802.11 mgmt frame.
