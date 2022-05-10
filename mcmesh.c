@@ -105,7 +105,44 @@ int get_monitor_interface(nl_handle *nl, struct if_info *new_if, struct if_info 
     return 0;
 }
 
+struct cli_args {
+    char *iface;
+    int ITER;
+    int monitor;
+};
+
+void parse_cli_args(int argc, char **argv, struct cli_args *args) {
+    int cnt = 2;
+    char *flag;
+    if (argc < 2) { 
+        printf("HELP:\n");
+        printf("-interface {INTERFACE NAME}"\t);
+        printf("-count {No. PACKETS}"\t);
+        printf("-type {CAPTURE INTERFACE TYPE}\n");
+        return; 
+    }
+    while (cnt < argc) {
+        flag = argv[cnt-1];
+        
+        if (strcmp(flag, "-interface") == 0) {
+            args->iface = argv[cnt];
+        }
+        if (strcmp(flag, "-count") == 0) {
+            args->ITER = strtol(argv[cnt], NULL, 10);
+        }
+        if (strcmp(flag, "-type") == 0) {
+            if (strcmp(argv[cnt], "monitor") == 0) {
+                args->monitor = 1;
+            } else {
+                args->monitor = 0;
+            }
+        }
+        cnt += 2;
+    }
+}
+
 int main(int argc, char **argv) {
+    struct cli_args args;
     nl_handle nl;
     //sk_handle skh;
     wifi_pcap_t wpt;
@@ -117,36 +154,11 @@ int main(int argc, char **argv) {
     /*
      *  STEP 0: TODO: Consider adding channel parameter.
      */
-    int monitor, ITER;
-    switch (argc)
-    {
-    /* Capture wifi traffic on local network on specified interface. */
-    case 2:
-        monitor = 0;
-        keep_if.if_name = argv[1];
-        break;
-    
-    /* Capture wifi traffic in monitor mode on specified interface. */
-    case 3:
-        monitor = 1;
-        keep_if.if_name = argv[1];
-        break;
-
-    /* Limit number of packets captured to ITER */
-    case 4:
-        monitor = 1;
-        keep_if.if_name = argv[1];
-        ITER = strtol(argv[3], NULL, 10);
-        break;
-
-    /* Need more arguments. */
-    default:
-        printf("Requires at least one argument: INTERFACE NAME.\n");
-        printf("\nsudo ./mcmesh {IFACE} {MONITOR} {No. PACKETS}\n");
-        return -1;
-        break;
-    }
+    parse_cli_args(argc, argv, &args);
+    keep_if.if_name = args.iface;
     keep_if.if_index = get_if_index(keep_if.if_name);
+    int monitor = args.monitor;
+    int ITER = args.ITER;
 
     if (monitor) {
         start_netlink(&nl);
