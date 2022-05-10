@@ -1,5 +1,5 @@
 # mcmesh
-This program is designed to listen to packets 802.11 "in the air".
+This program is designed to sniff 802.11 frames "in the air" or ethernet frames from a wifi interface on a local network.
 To run this program you will need:
 - Linux. 
 - A wifi chipset that:
@@ -9,7 +9,6 @@ To run this program you will need:
 
 
 ## Build & Run
-(Makefile under construction.)
 ```
 $ make
 $ sudo ./mcmesh [-interface] {interface name} [-count] {No. of packets to capture} [-type] {capture interface type (i.e. "monitor")}
