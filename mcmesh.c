@@ -116,8 +116,8 @@ void parse_cli_args(int argc, char **argv, struct cli_args *args) {
     char *flag;
     if (argc < 2) { 
         printf("HELP:\n");
-        printf("-interface {INTERFACE NAME}"\t);
-        printf("-count {No. PACKETS}"\t);
+        printf("-interface {INTERFACE NAME}\t");
+        printf("-count {No. PACKETS}\t");
         printf("-type {CAPTURE INTERFACE TYPE}\n");
         return; 
     }
