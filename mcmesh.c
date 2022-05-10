@@ -1,10 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+//#include <errno.h>
+//#include <signal.h>
 
 #include "nl_utilities.h"
 #include "handle80211.h"
 #include "wpcap.h"
+
+// volatile sig_atomic_t signal_status = 1;
+
+// void sig_handler(int signal) {
+//     signal_status = 0;
+// }
 
 void print_interface(struct if_info *info) {
     printf("Interface: %s\n", info->if_name);
@@ -145,19 +153,26 @@ int main(int argc, char **argv) {
     struct cli_args args;
     nl_handle nl;
     //sk_handle skh;
+    int monitor;
     wifi_pcap_t wpt;
     struct if_info keep_if = {0};
     struct if_info new_if = {0};
     struct bpf_program fp;
     char filter_expr[] = "";//type mgt subtype beacon";
 
+    // struct sigaction sa;
+    // sa.sa_handler = sig_handler;
+    // sa.sa_flags = 0;
+    // sigemptyset(&sa.sa_mask);
+    //sigaction(SIGINT, &sa, NULL);
+
     /*
-     *  STEP 0: TODO: Consider adding channel parameter.
-     */
+    *  STEP 0: TODO: Consider adding channel parameter.
+    */
     parse_cli_args(argc, argv, &args);
     keep_if.if_name = args.iface;
     keep_if.if_index = get_if_index(keep_if.if_name);
-    int monitor = args.monitor;
+    monitor = args.monitor;
     int ITER = args.ITER;
 
     if (monitor) {
@@ -174,8 +189,8 @@ int main(int argc, char **argv) {
     }
 
     /*
-     * Create & configure packet socket.
-     */
+    * Create & configure packet socket.
+    */
     //init_packet_socket(&skh, &new_if);
     int cont = 1;
     if (init_wpcap(&wpt, new_if.if_name, &fp, filter_expr, monitor) < 0) {
@@ -184,8 +199,8 @@ int main(int argc, char **argv) {
     }
 
     /* 
-     *  Receive and parse data from the socket.
-     */
+    *  Receive and parse data from the socket.
+    */
     //recv_socket(&skh, ITER);
     if (cont) {
         view_packets(&wpt, ITER, monitor);
