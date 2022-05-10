@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
     /*
      *  STEP 6: Recreate network interface setup and free resources used.
      */
-    printf("Recreating prior existing interface...\n");
+    //printf("Recreating prior existing interface...\n");
     if (create_new_interface(&nl, keep_if.if_name, NL80211_IFTYPE_STATION, keep_if.wiphy) < 0) {
         fprintf(stderr, "Could not recreate prior existing network interface.\n");
     }
