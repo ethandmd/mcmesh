@@ -193,7 +193,6 @@ int init_wpcap(wifi_pcap_t *wpt, const char *dev_name, struct bpf_program *fp, c
         return -1;
     }
 
-    printf("Verifying data link type...\n");
     if (pcap_datalink(wpt->handle) != DLT_IEEE802_11_RADIO) {   //versus just DLT_IEEE802_11
         fprintf(stderr, "%s is not a compatible with radiotap link layer info followed by 80211 header.\n", dev_name);//, wpt->errbuf);
         return -1;
@@ -205,7 +204,6 @@ int init_wpcap(wifi_pcap_t *wpt, const char *dev_name, struct bpf_program *fp, c
         fprintf(stderr, "Could not compile BPF expression:\n\t%s.\n", filter);//, wpt->errbuf);
         return -1;
     }
-    printf("Setting filter...\n");
     if (pcap_setfilter(wpt->handle, fp) < 0) {
         fprintf(stderr, "Could not apply BPF fitler.\n");//, wpt->errbuf);
         //return -1;

@@ -69,7 +69,6 @@ int main(int argc, char **argv) {
     /*
      *  STEP 1:
      */
-    printf("Initializing netlink socket...\n");
     nl_init(&nl);
     if (!nl.sk) {
         fprintf(stderr, "Failed to initialize netlink socket.\n");
@@ -79,7 +78,6 @@ int main(int argc, char **argv) {
     /*
      *  STEP 2: Store existing interface config.
      */
-    printf("Storing %s configuration...\n", keep_if.if_name);
     if (get_interface_config(&nl, &keep_if, keep_if.if_index) < 0) {
         fprintf(stderr, "Could not collect configuration for %s.\n", keep_if.if_name);
         return -1;
@@ -114,7 +112,7 @@ int main(int argc, char **argv) {
             fprintf(stderr, "Could not delete %s...proceeding.\n", keep_if.if_name);
         }
     }
-    set_interface_channel(&nl, new_if.if_index, CHANNEL_149);
+    //set_interface_channel(&nl, new_if.if_index, CHANNEL_149);
     get_interface_config(&nl, &new_if, new_if.if_index);
     printf("New monitor mode interface configuration...\n");
     print_interface(&new_if);
