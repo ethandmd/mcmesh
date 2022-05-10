@@ -1,10 +1,24 @@
 #ifndef MCPCAP_H
 #define MCPCAP_H
 
+#include <stdint.h>
+
 typedef struct {
     int sockfd;
     char *buffer;
 } sk_handle;
+
+/*
+ *  From radiotap.org
+ *  De facto (linux?) standard for 80211 rx/tx.
+ *  Mostly just want the offset, don't care as much about fine details at the moment.
+ */
+struct radiotap_header {
+    uint8_t it_rev; //Radiotap version, set to 0?
+    uint8_t it_pad; //Alignment padding -- word boundaries
+    uint8_t it_len; //Get entire radiotap header
+    uint8_t it_present; //Fields present
+};
 
 /*
  *  Frame Control Field for figuring out what is happening.

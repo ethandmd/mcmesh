@@ -13,22 +13,6 @@
 
 #include "mcpcap.h"
 
-
-
-
-/*
- *  From radiotap.org
- *  De facto (linux?) standard for 80211 rx/tx.
- *  Mostly just want the offset, don't care as much about fine details at the moment.
- */
-struct radiotap_header {
-    uint8_t it_rev; //Radiotap version, set to 0?
-    uint8_t it_pad; //Alignment padding -- word boundaries
-    uint8_t it_len; //Get entire radiotap header
-    uint8_t it_present; //Fields present
-};
-
-
 /*
  *  802.11 mgmt frame.
 */
@@ -227,7 +211,7 @@ void handle_buffer(sk_handle *skh) {
     int offset = rthdr->it_len;
     
     enum frame_type type;
-    frame_ctrl *fctrl = (frame_ctrl *)skh->buffer; //+offset
+    frame_ctrl *fctrl = (frame_ctrl *)skh->buffer+offset;
     get_frame_type(&(fctrl->fc[0]), &type);
     handle_frame(skh->buffer, &type);
 }
