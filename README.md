@@ -37,7 +37,7 @@ $ sudo apt install lipcap-dev
 ```
 + Example (Fedora 35):
 ```
-$ sudo dnf install libcap-devel
+$ sudo dnf install libpcap-devel
 ```
 
     
