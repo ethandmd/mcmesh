@@ -1,6 +1,7 @@
 #include "wpcap.h"
 #include <linux/if_ether.h>
 #include <stdint.h>
+#include <assert.h>
 
 /*
  *  From radiotap.org
@@ -14,39 +15,60 @@ struct radiotap_header {
     uint8_t it_present; //Fields present
 };
 
-/*
- *  802.11ac MAC Frame.
-             subtype-type-version 
- *  FC mgmt: XXXX   - 00 - 00       (i.e. probe request, beacon, auth/deauth, etc)
- *  FC ctrl: XXXX   - 01 - 00
- *  FC data: XXXX   - 10 - 00
-*/
-typedef struct {
-    unsigned char frame_control[2];     /* mgmt, ctrl, data */
-    unsigned char frame_duration[2];
-    unsigned char source[6];            /* RX mac addr */
-    unsigned char destination[6];       /* TX mac addr */ 
-    unsigned char bssid[6];         /* Filtering (BSS?) ID */
-    unsigned char seq_ctrl[2];          /* frame sequence */
-} ass_req_frame;
 
 /*
- *  Wikipedia 802.11 mgmt frame subtypes. Only choosingto care about a few of these.
+ *  Frame Control Field for figuring out what is happening.
  */
-enum mgmt_frame_subtype {
+typedef struct {
+    unsigned char fc[2];      /* First two bytes of the MAC header */
+} frame_ctrl;
+
+/*
+ *  802.11 mgmt frame.
+*/
+typedef struct {                        /* Typically:   */
+    frame_ctrl frame_control;           /* (ver/type/subtype) + (flags)*/
+    unsigned char frame_duration[2];    /* (TO DS = 0/FROM DS = 0/....) + (....) */
+    unsigned char address1[6];          /* Source mac addr */
+    unsigned char address2[6];          /* Dest mac addr */ 
+    unsigned char address3[6];          /* Tx mac addr */
+    unsigned char seq_ctrl[2];          /* frame sequence */
+} mgmt_frame;
+
+
+/*
+ *  Wikipedia 802.11 frame subtypes. Only choosing to care about a few of these.
+ *  Frame control field is 2 bytes. First byte is ordered:
+ *  |B0 B1| |B2 B3| |B4 B5 B6 B7|
+ *  |.ver.| |.type| |..subtype..|
+ * 
+ *  So, for mgmt frames, type & version is always zero...
+ *  Second byte has TO DS and FROM DS as B0, B1. We will only care about these bits.
+ */
+
+enum frame_type {
+    MGMT,
+    CTRL,
+    DATA
+};
+
+/*
+ * Yes, redundant use of enum-ing. Bear with me.
+ */
+enum mgmt_frame_type {
     ASSOCIATION_REQEUST = 0x0,
+    ASSOCIATION_RESPONSE = 0X1,
     REASSOCIATION_REQUEST = 0x2,
-    PROBE_REQUEST = 0x4,            /* This */
-    TIMING_ADVERTISEMENT = 0x6,
-    BEACON = 0X8,                   /* This */
-    DISASSOCIATION = 0XA,
-    DEAUTHENTICATION = 0XC,
-    AUTHENTICATION = 0XB,
-    ACTION = 0XE,
-    ASSOCATION_RESPONSE = 0X1,
     REASSOCIATION_RESPONSE = 0X3,
-    PROBE_RESPONSE = 0X5,           /* This */
-    RESERVED = 0X7
+    PROBE_REQUEST = 0x4,
+    PROBE_RESPONSE = 0X5,
+    TIMING_ADVERTISEMENT = 0x6,
+    RESERVED = 0X7,
+    BEACON = 0X8,
+    DISASSOCIATION = 0XA,
+    AUTHENTICATION = 0XB,
+    DEAUTHENTICATION = 0XC,
+    ACTION = 0XE,
 };
 
 const char * mgmt_subtype_strings[] = {
@@ -65,10 +87,6 @@ const char * mgmt_subtype_strings[] = {
     "RESERVED"
 };
 
-void print_mgmt_subtype(unsigned char block) {
-    printf("\nMGMT FRAME SUBTYPE: %s", mgmt_subtype_strings[(int)(block)]);
-}
-
 /*
  *  Simple utility for printing bytes in hex format.
  */
@@ -85,6 +103,67 @@ void print_bytes_hex(void *data, size_t len) {
 }
 
 /*
+ *  Find the frame type.
+ */
+void get_frame_type(const u_char *byte, enum frame_type *type) {
+    if (*byte & 0x8) {
+        *type = DATA;
+    } 
+    if (*byte & 0x4) {
+        *type = CTRL;
+    }
+    assert(!(*byte & 0x8) && !(*byte & 0x4));
+    *type = MGMT;
+}
+
+
+void print_mgmt_subtype(const u_char byte) {
+    printf("\nMGMT FRAME SUBTYPE: %s", mgmt_subtype_strings[(int)(byte)]);
+}
+/*
+ *  Could write data to somewhere interesting...but instead
+ *  this function prints packet data as appropriate.
+ *  Should have TO DS = 0, FROM DS = 0 (STA to STA)
+ */
+void handle_mgmt_frame(const u_char *pkt) {
+    mgmt_frame *frame = (mgmt_frame *)(pkt);
+    assert(!(frame->frame_control.fc[1] & 0x80) && !(frame->frame_control.fc[1] & 0x40));   /* Sanity check for TO/FROM DS. */
+    print_mgmt_subtype(frame->frame_control.fc[0]);
+    printf("DEST MAC:\t");
+    print_bytes_hex(&(frame->address1), 6);
+    printf("SRC MAC:\t");
+    print_bytes_hex(&(frame->address2), 6);
+    printf("BSSID MAC:\t");
+    print_bytes_hex(&(frame->address3), 6);
+    printf("\n");
+}
+
+/*
+ *  Not yet implemented.
+ */
+void handle_ctrl_frame(const u_char *pkt) {
+    printf("CTRL FRAME\n");
+}
+void handle_data_frame(const u_char *pkt) {
+    printf("DATA FRAME\n");
+}
+
+/*
+ *  Pass frame off to appropriate type handler.
+ */
+void handle_frame(const u_char *pkt, enum frame_type *type) {
+    switch (*type) {
+        case MGMT:
+            handle_mgmt_frame(pkt);
+        case CTRL:
+            handle_ctrl_frame(pkt);
+        case DATA:
+            handle_data_frame(pkt);
+    }
+}
+
+
+/*
  *  TODO: Implement timestamp, appropriate casts & printing bytes.
  *  Callback function for pcap_loop().
  */
@@ -92,20 +171,10 @@ void packet_callback(u_char *arg, const struct pcap_pkthdr *pkthdr, const u_char
     // struct radiotap_header *rthdr;
     // rthdr = (struct radiotap_header *)pkt;  //If nothing else from this project: I <3 casting.
     // int offset = rthdr->it_len;     //Get radiotap offset
-
-
-    ass_req_frame *frame = (ass_req_frame *)pkt;
-    if (frame->frame_control[0] == 0) {
-        printf("802.11 MGMT FRAME:\n");
-    }
-    print_mgmt_subtype(frame->frame_control[1]);
-    printf("\nSRC ADDR:\t");
-    print_bytes_hex(&(frame->source), 6);
-    printf("\nDEST ADDR:\t");
-    print_bytes_hex(&(frame->destination), 6);
-    printf("\nBSSID:\t");
-    print_bytes_hex(&(frame->bssid), 6);
-    printf("\n");
+    enum frame_type type;
+    frame_ctrl *fctrl = (frame_ctrl *)pkt;
+    get_frame_type(&(fctrl->fc[0]), &type);
+    handle_frame(pkt, &type);
 }
 
 int init_wpcap(wifi_pcap_t *wpt, const char *dev_name, struct bpf_program *fp, const char *filter) {
