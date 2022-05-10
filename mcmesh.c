@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <errno.h>
+#include <errno.h>
 //#include <signal.h>
 
 #include "nl_utilities.h"
@@ -122,12 +122,12 @@ struct cli_args {
 void parse_cli_args(int argc, char **argv, struct cli_args *args) {
     int cnt = 2;
     char *flag;
-    if (argc < 2) { 
+    if (argc < 3) { 
         printf("HELP:\n");
         printf("[--i][-interface] {INTERFACE NAME}\t");
         printf("[--c][-count] {No. PACKETS}\t");
         printf("[--t][-type] {CAPTURE INTERFACE TYPE}\n");
-        return; 
+        exit(1); 
     }
     while (cnt < argc) {
         flag = argv[cnt-1];
@@ -138,7 +138,7 @@ void parse_cli_args(int argc, char **argv, struct cli_args *args) {
         if (strcmp(flag, "-count") == 0 || strcmp(flag, "--c") == 0) {
             args->ITER = strtol(argv[cnt], NULL, 10);
         }
-        if (strcmp(flag, "-type") == 0 || strmcp(flag, "--t") == 0) {
+        if (strcmp(flag, "-type") == 0 || strcmp(flag, "--t") == 0) {
             if (strcmp(argv[cnt], "monitor") == 0) {
                 args->monitor = 1;
             } else {
