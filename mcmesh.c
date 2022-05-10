@@ -4,7 +4,7 @@
 
 #include "nl_utilities.h"
 #include "handle80211.h"
-//#include "wpcap.h"
+#include "wpcap.h"
 
 void print_interface(struct if_info *info) {
     printf("Interface: %s\n", info->if_name);
@@ -15,36 +15,36 @@ void print_interface(struct if_info *info) {
     printf("\tIFFREQ: %d\n", info->if_freq);
 }
 
-void init_packet_socket(sk_handle *skh, struct if_info *info) {
-    create_pack_socket(skh);
-    if (!skh->sockfd) {
-        fprintf(stderr, "Could not allocate new packet socket. Are you running this as root/sudo?\n");
-    }
-    if (bind_pack_socket(skh, info->if_index) < 0) {
-        fprintf(stderr, "Could not bind packet socket to %s", info->if_name);
-    }
-    //Optional...?
-    if (set_if_promisc(skh, info->if_index) < 0) {
-        printf("Could not set %s to promiscuous mode.\n", info->if_name);
-    }
-}
+// void init_packet_socket(sk_handle *skh, struct if_info *info) {
+//     create_pack_socket(skh);
+//     if (!skh->sockfd) {
+//         fprintf(stderr, "Could not allocate new packet socket. Are you running this as root/sudo?\n");
+//     }
+//     if (bind_pack_socket(skh, info->if_index) < 0) {
+//         fprintf(stderr, "Could not bind packet socket to %s", info->if_name);
+//     }
+//     //Optional...?
+//     if (set_if_promisc(skh, info->if_index) < 0) {
+//         printf("Could not set %s to promiscuous mode.\n", info->if_name);
+//     }
+// }
 
-void recv_socket(sk_handle *skh, int ITER) {
-    int fail = 0;
-    int count = 0;
-    skh->buffer = (char *)malloc(65336);     //Going big! Eth MTU is probably fine.
-    memset(skh->buffer, 0, 65536);
-    printf("Waiting to receive packets...\n");
-    while (count < ITER) {
-        count++;
-        if (read_socket(skh) < 0) {
-            fail++;
-            printf("Failed to read %d/%d packets.\n", fail, count);
-        } else {
-            handle_buffer(skh);
-        }
-    }
-}
+// void recv_socket(sk_handle *skh, int ITER) {
+//     int fail = 0;
+//     int count = 0;
+//     skh->buffer = (char *)malloc(65336);     //Going big! Eth MTU is probably fine.
+//     memset(skh->buffer, 0, 65536);
+//     printf("Waiting to receive packets...\n");
+//     while (count < ITER) {
+//         count++;
+//         if (read_socket(skh) < 0) {
+//             fail++;
+//             printf("Failed to read %d/%d packets.\n", fail, count);
+//         } else {
+//             handle_buffer(skh);
+//         }
+//     }
+// }
 
     /*
     *  Initialize netlink socket.
@@ -89,12 +89,12 @@ int get_monitor_interface(nl_handle *nl, struct if_info *new_if, struct if_info 
             return -1;
         }
         set_if_up(keep_if->if_name);
-        get_interface_config(&nl, &new_if, keep_if->if_index);   //Overwrite "new" iface info with re-typed iface.i
+        get_interface_config(nl, new_if, keep_if->if_index);   //Overwrite "new" iface info with re-typed iface.i
     } else {
         set_if_up(new_if->if_name);
         new_if->if_index = get_if_index(new_if->if_name);
         printf("Deleting %s...\n", keep_if->if_name);
-        if (delete_interface(&nl, keep_if->if_index) < 0) {
+        if (delete_interface(nl, keep_if->if_index) < 0) {
             fprintf(stderr, "Could not delete %s...proceeding.\n", keep_if->if_name);
         }
     }
@@ -107,12 +107,12 @@ int get_monitor_interface(nl_handle *nl, struct if_info *new_if, struct if_info 
 
 int main(int argc, char **argv) {
     nl_handle nl;
-    sk_handle skh;
-    //wifi_pcap_t wpt;
+    //sk_handle skh;
+    wifi_pcap_t wpt;
     struct if_info keep_if = {0};
     struct if_info new_if = {0};
-    // struct bpf_program fp;
-    // char filter_expr[] = "";//type mgt subtype beacon";
+    struct bpf_program fp;
+    char filter_expr[] = "";//type mgt subtype beacon";
 
     /*
      *  STEP 0: TODO: Consider adding channel parameter.
@@ -134,47 +134,49 @@ int main(int argc, char **argv) {
 
     case 4:
         monitor = 1;
+        keep_if.if_name = argv[1];
         ITER = strtol(argv[3], NULL, 10);
         break;
 
     /* Need more arguments. */
     default:
         printf("Requires at least one argument: INTERFACE NAME.\n");
+        printf("\nsudo ./mcmesh {IFACE} {MONITOR} {No. PACKETS}\n");
         return -1;
         break;
     }
     keep_if.if_index = get_if_index(keep_if.if_name);
-
-
-    if (argc < 4) {
-        fprintf(stderr, "Require exactly 2 arguments, char *interface name; int ITER;\n");// int channel.\n");
-    }
 
     if (monitor) {
         start_netlink(&nl);
         find_interface(&nl, &keep_if);
         get_monitor_interface(&nl, &new_if, &keep_if);
     } else {
-        new_if = keep_if;
+        new_if.if_name = keep_if.if_name;
+        new_if.if_index = keep_if.if_index;
+        new_if.if_type = keep_if.if_type;
+        new_if.wdev = keep_if.wdev;
+        new_if.wiphy = keep_if.wiphy;
+        new_if.if_freq = keep_if.if_freq;
     }
-    
+
     /*
      * Create & configure packet socket.
      */
-    init_packet_socket(&skh, &new_if);
-    // int cont = 1;
-    // if (init_wpcap(&wpt, new_if.if_name, &fp, filter_expr) < 0) {
-    //     cont = 0;
-    //     printf("Unable to open pcap session on %s.\n", new_if.if_name);
-    // }
+    //init_packet_socket(&skh, &new_if);
+    int cont = 1;
+    if (init_wpcap(&wpt, new_if.if_name, &fp, filter_expr, monitor) < 0) {
+        cont = 0;
+        printf("Unable to open pcap session on %s.\n", new_if.if_name);
+    }
 
     /* 
      *  Receive and parse data from the socket.
      */
-    recv_socket(&skh, ITER);
-    // if (cont) {
-    //     view_packets(&wpt, ITER);
-    // }
+    //recv_socket(&skh, ITER);
+    if (cont) {
+        view_packets(&wpt, ITER, monitor);
+    }
 
     if (monitor) {
         /*
@@ -192,8 +194,8 @@ int main(int argc, char **argv) {
         nl_cleanup(&nl);
     }
     
-    cleanup_mcpap(&skh);
-    //cleanup_wpcap(&wpt, &fp);
+    //cleanup_mcpap(&skh);
+    cleanup_wpcap(&wpt, &fp);
 
     return 0;
 }

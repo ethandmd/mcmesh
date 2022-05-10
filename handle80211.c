@@ -55,7 +55,7 @@ enum mgmt_frame_type {
 };
 
 const char * mgmt_subtype_strings[] = {
-    "ASSOCIATION_REQEUST",
+    "ASSOCIATION_REQUEST",
     "REASSOCIATION_REQUEST",
     "PROBE_REQUEST",
     "TIMING_ADVERTISEMENT",
@@ -91,11 +91,13 @@ void print_bytes_hex(void *data, size_t len) {
 void get_frame_type(const u_char *byte, enum frame_type *type) {
     if (*byte & 0x8) {
         *type = DATA;
+        return;
     } 
     if (*byte & 0x4) {
         *type = CTRL;
+        return;
     }
-    assert(!(*byte & 0x8) && !(*byte & 0x4));
+    //assert(!(*byte & 0x8) && !(*byte & 0x4));
     *type = MGMT;
 }
 
@@ -110,7 +112,7 @@ void print_mgmt_subtype(const u_char byte) {
  */
 void handle_mgmt_frame(const u_char *pkt) {
     mgmt_frame *frame = (mgmt_frame *)(pkt);
-    assert(!(frame->frame_control.fc[1] & 0x80) && !(frame->frame_control.fc[1] & 0x40));   /* Sanity check for TO/FROM DS. */
+    //assert(!(frame->frame_control.fc[1] & 0x80) && !(frame->frame_control.fc[1] & 0x40));   /* Sanity check for TO/FROM DS. */
     print_mgmt_subtype(frame->frame_control.fc[0]);
     printf("\nDEST MAC:\t");
     print_bytes_hex(&(frame->address1), 6);
@@ -210,7 +212,7 @@ void handle_buffer(sk_handle *skh) {
     int offset = rthdr->it_len;
     
     enum frame_type type;
-    frame_ctrl *fctrl = (frame_ctrl *)skh->buffer+offset;
+    frame_ctrl *fctrl = (frame_ctrl *)skh->buffer + offset;
     get_frame_type(&(fctrl->fc[0]), &type);
     handle_frame(skh->buffer, &type);
 }
