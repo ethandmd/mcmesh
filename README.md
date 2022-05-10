@@ -10,9 +10,16 @@ To run this program you will need:
 ## Build & Run
 ```
 $ make
-$ sudo ./mcmesh [-interface] {interface name} [-count] {No. of packets to capture} [-type] {capture interface type (i.e. "monitor")}
+$ sudo ./mcmesh -interface, --i {interface name} [--count, -c] {No. of packets to capture} [--type, -t] {capture interface type (i.e. "monitor")}
 ```
-*For interface type, only support station (managed) mode, or monitor mode.
+*For interface type, only supports station (managed) mode, or monitor mode.
+Currently (until signal catching implementation is finished) if you kill the program during a monitor mode capture before it's finished (or if no --count was specified), it will not delete the monitor mode interface, and your prior existing wireless interface will not be restored. In this case, you would likely benefit from the following `iw` commands:
+```
+#Delete monitor interface:
+$ sudo iw dev mcmon del
+#Restore managed interface:
+$ sudo iw phy {WIPHY (e.g. phy0)} interface add {IFACE NAME} type managed
+```
 
 ### Install-Dependencies
 1) Install [libnl](https://www.infradead.org/~tgr/libnl/) with headers for dev (or in the future possibly go to libmnl, libnl tiny (OpenWRT)) in order to use the ```nl80211.h``` enums.
@@ -61,8 +68,12 @@ $ make && sudo make install   #then reboot
 ## Who
 author: Ethan
 
+collaborators:<br/>
+Thomas (testing on Arch & code review), Henry (testing on Fedora). <br/>
+*all testing happened on x86_64 machine with intel wifi cards, and raspberrypi 3/4 with RTL8812au USB Alfa Wireless chipset for monitor mode, standard Broadcomm chipset for regular capture.
+
 ## What
-This program is a limited link layer packet capture mechanism written in C, relying on generic netlink and libpcap. There are two principle methods with which to run this program, either running packet capture mechanism on a network interface in managed mode (parse ethernet frames), or on a monitor mode wireless interface (parse 802.11 frames. For non-monitor mode packet capture, this program just blindly reads ethernet frames (granted using some conveniance of libpcap instead of my secondary implementation with packet sockets), and prints the source's hardware address, destination's hardware address, and the (IP) Layer 3 protocol used, should further packet parsing be desired. Monitor mode capture is more interesting, and took more investigating to figure out (still not quite a 100% solution, frankly). Before I go any further, some background on the Linux wireless subsystem is required. Starting in 2009, Johannes Berg took control of the linux wifi stack, and implemented (roughly) the following:
+This program is a limited link layer packet capture mechanism written in C, relying on generic netlink and libpcap. There are two principle methods with which to run this program, either running packet capture mechanism on a network interface in managed mode (parse ethernet frames), or on a monitor mode wireless interface (parse 802.11 frames). For non-monitor mode packet capture, this program just blindly reads ethernet frames (granted using some conveniance of libpcap instead of my initial implementation with packet sockets), and prints the source's hardware address, destination's hardware address, and the (IP) Layer 3 protocol used, should further packet parsing be desired. Monitor mode capture is more interesting, and took more investigating to figure out (still not quite a 100% solution, frankly). Before I go any further, some background on the Linux wireless subsystem is required. Starting in 2009, Johannes Berg took control of the linux wifi stack, and implemented (roughly) the following:
 ```
             mcmesh              (user)
               |
@@ -76,7 +87,7 @@ This program is a limited link layer packet capture mechanism written in C, rely
 ```
 [credit](https://wireless.wiki.kernel.org/_media/en/developers/documentation/mac80211.pdf).
 
-So, if you are still using depcrated wireless management tools built on solely `ioctl` and `wext` instead of [nl80211](https://wireless.wiki.kernel.org/en/developers/Documentation/nl80211) you should switch (c.f. `iw`, `wpa_supplicant`, `hostapd`,...). So, what is netlink, generally? [Netlink](https://linux.die.net/man/7/netlink) is a sockets-based interface for facilitating user space -- kernel space communication, and internal kernel space communication. Its prety cool, and interesting, and a large part of why I got into this project to begin with. As an IPC mechanism, it was primarily motivated to facilitate network related communication, and has expanded into subsets of further specialized netlink family sockets. However, noticeably, this project doesn't contain any netlink sockets outright, instead, this program uses [libnl](https://www.infradead.org/~tgr/libnl/). `libnl` provides an abstraction to use netlink, it's conveniant, and doesn't abstract much from just using an `AF_NETLINK` socket, it's also more or less the go-to for userspace programs using nl80211 (like this one). Next, `nl80211.h`, a header file with a predefined set of instructions used to communicate via netlink sockets to the wireless subsystem in kernel space. This is the center of the developer API for doing things like creating/deleting interfaces, setting wireless interface parameters, sending the wireless interface a command such as a scan for all nearby SSIDs. Needless to say, the bulk of ```mcmesh```'s `nl_utilities` rely on this API, asides from a few `ioctl` calls.
+So, if you are still using deprecated wireless management tools built on `wext` instead of [nl80211](https://wireless.wiki.kernel.org/en/developers/Documentation/nl80211) you should stop doing so! So, what is netlink, generally? [Netlink](https://linux.die.net/man/7/netlink) is a sockets-based interface for facilitating user space -- kernel space communication, and internal kernel space communication. Its prety cool, and interesting, and a large part of why I got into this project to begin with. As an IPC mechanism, it was primarily motivated to facilitate network related communication, and has expanded into subsets of further specialized netlink family sockets. However, noticeably, this project doesn't contain any netlink sockets outright, instead, this program uses [libnl](https://www.infradead.org/~tgr/libnl/). `libnl` provides an abstraction to use netlink, it's conveniant, and doesn't abstract much from just using an `AF_NETLINK` socket, it's also more or less the go-to for userspace programs using nl80211 (like this one). Next, `nl80211.h`, a header file with a predefined set of instructions used to communicate via netlink sockets to the wireless subsystem in kernel space. This is the center of the developer API for doing things like creating/deleting interfaces, setting wireless interface parameters, sending the wireless interface a command such as a scan for all nearby SSIDs. Needless to say, the bulk of ```mcmesh```'s `nl_utilities` rely on this API, asides from a few `ioctl` calls.
 
 Ok, brief background on netlink and the linux wireless subsystem complete. Now a brief foray into 802.11, which isn't really something one can be brief about it. It is a nightmare of compatibility issues between hardware, drivers, IEEE standards, and just a myriad of problems that wouldn't exist if you only used elegant wired connections. For example, if you run this program on hardware with a hardmac vs. a softmac chipset, you likely won't have as much functionality in this context. Linked to above, `mac80211` is performing the MAC layer management (MLME) for softmac chips, as opposed to MLME happening on device for (full/hard)mac chip. So, when placed into monitor mode, there are several precautions one ought to take in order to get a "good" capture. First, it helps to have no other virtual interfaces on the same wireless physical device (wiphy), mostly because another interface could take precedence in associating with an access point (AP), or setting channel frequencies. 
 
