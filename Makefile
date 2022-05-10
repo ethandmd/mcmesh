@@ -1,22 +1,14 @@
 # $ gcc mcmesh.c nl_utilities.c wpcap.c handle80211.c -o mcmesh $(pkg-config --cflags --libs libnl-genl-3.0) -lpcap
 
-CC=gcc
-#LDFLAGS=$(shell pkg-config --libs libnl-genl-3.0)
-LIBS=-lnl-genl-3 -lnl-3
-CFLAGS=-Wall -Werror -Wpedantic #-Wno-unused-parameter
-CFLAGS += $(shell pkg-config --cflags libnl-genl-3.0)
-#OBJ=start_monitor.o nl_utilities.o mcpcap.o
+CC = gcc
+INCLUDE = -I/usr/include/libnl3
+LDFLAGS = -lpcap -lnl-genl-3 -lnl-3
+CFLAGS = -Wall -Werror -Wpedantic 
 
-all: start_monitor #test_nl_utilities
+all: mcmesh
 
-# test_nl_utilities: nl_utilities.o test_nl_utilities.o
-# 	${CC} ${CFLAGS -o $@ -c $< ${LDFLAGS} 
-
-start_monitor: nl_utilities.o mcpcap.o start_monitor.o
-	${CC} -o $@ -c $< ${CFLAGS} ${LIBS}
-
-# test: all
-# 	./test_nl_utilities 
+mcmesh: mcmesh.c nl_utilities.c wpcap.c handle80211.c
+	$(CC) $(CFLAGS) mcmesh.c nl_utilities.c wpcap.c handle80211.c -o mcmesh $(INCLUDE) $(LDFLAGS)
 
 clean:
 	rm -rf *.o
