@@ -1,4 +1,4 @@
-# $ gcc start_monitor.c nl_utilities.c wpcap.c handle80211.c -o start_monitor $(pkg-config --cflags --libs libnl-genl-3.0) -lpcap
+# $ gcc mcmesh.c nl_utilities.c wpcap.c handle80211.c -o mcmesh $(pkg-config --cflags --libs libnl-genl-3.0) -lpcap
 
 CC=gcc
 #LDFLAGS=$(shell pkg-config --libs libnl-genl-3.0)
