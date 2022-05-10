@@ -14,6 +14,8 @@
 #include "mcpcap.h"
 
 
+
+
 /*
  *  From radiotap.org
  *  De facto (linux?) standard for 80211 rx/tx.
@@ -25,6 +27,143 @@ struct radiotap_header {
     uint8_t it_len; //Get entire radiotap header
     uint8_t it_present; //Fields present
 };
+
+
+/*
+ *  802.11 mgmt frame.
+*/
+typedef struct {                        /* Typically:   */
+    frame_ctrl frame_control;           /* (ver/type/subtype) + (flags)*/
+    unsigned char frame_duration[2];    /* (TO DS = 0/FROM DS = 0/....) + (....) */
+    unsigned char address1[6];          /* Source mac addr */
+    unsigned char address2[6];          /* Dest mac addr */ 
+    unsigned char address3[6];          /* Tx mac addr */
+    unsigned char seq_ctrl[2];          /* frame sequence */
+} mgmt_frame;
+
+
+/*
+ *  Wikipedia 802.11 frame subtypes. Only choosing to care about a few of these.
+ *  Frame control field is 2 bytes. First byte is ordered:
+ *  |B0 B1| |B2 B3| |B4 B5 B6 B7|
+ *  |.ver.| |.type| |..subtype..|
+ * 
+ *  So, for mgmt frames, type & version is always zero...
+ *  Second byte has TO DS and FROM DS as B0, B1. We will only care about these bits.
+ */
+
+/*
+ * Yes, redundant use of enum-ing. Bear with me.
+ */
+enum mgmt_frame_type {
+    ASSOCIATION_REQEUST = 0x0,
+    ASSOCIATION_RESPONSE = 0X1,
+    REASSOCIATION_REQUEST = 0x2,
+    REASSOCIATION_RESPONSE = 0X3,
+    PROBE_REQUEST = 0x4,
+    PROBE_RESPONSE = 0X5,
+    TIMING_ADVERTISEMENT = 0x6,
+    RESERVED = 0X7,
+    BEACON = 0X8,
+    DISASSOCIATION = 0XA,
+    AUTHENTICATION = 0XB,
+    DEAUTHENTICATION = 0XC,
+    ACTION = 0XE,
+};
+
+const char * mgmt_subtype_strings[] = {
+    "ASSOCIATION_REQEUST",
+    "REASSOCIATION_REQUEST",
+    "PROBE_REQUEST",
+    "TIMING_ADVERTISEMENT",
+    "BEACON",
+    "DISASSOCIATION",
+    "DEAUTHENTICATION",
+    "AUTHENTICATION",
+    "ACTION",
+    "ASSOCATION_RESPONSE",
+    "REASSOCIATION_RESPONSE",
+    "PROBE_RESPONSE",
+    "RESERVED"
+};
+
+/*
+ *  Simple utility for printing bytes in hex format.
+ */
+void print_bytes_hex(void *data, size_t len) {
+    const u_char *bytes = data;
+    size_t count;
+    for (count=0; count < len; count++) {
+        if (count == len-1) {
+        printf("%.2X", bytes[count]);
+        } else {
+            printf("%.2X:", bytes[count]);
+        }
+    }
+}
+
+/*
+ *  Find the frame type.
+ */
+void get_frame_type(const u_char *byte, enum frame_type *type) {
+    if (*byte & 0x8) {
+        *type = DATA;
+    } 
+    if (*byte & 0x4) {
+        *type = CTRL;
+    }
+    assert(!(*byte & 0x8) && !(*byte & 0x4));
+    *type = MGMT;
+}
+
+
+void print_mgmt_subtype(const u_char byte) {
+    printf("\nMGMT FRAME SUBTYPE: %s", mgmt_subtype_strings[(int)(byte)]);
+}
+/*
+ *  Could write data to somewhere interesting...but instead
+ *  this function prints packet data as appropriate.
+ *  Should have TO DS = 0, FROM DS = 0 (STA to STA)
+ */
+void handle_mgmt_frame(const u_char *pkt) {
+    mgmt_frame *frame = (mgmt_frame *)(pkt);
+    assert(!(frame->frame_control.fc[1] & 0x80) && !(frame->frame_control.fc[1] & 0x40));   /* Sanity check for TO/FROM DS. */
+    print_mgmt_subtype(frame->frame_control.fc[0]);
+    printf("\nDEST MAC:\t");
+    print_bytes_hex(&(frame->address1), 6);
+    printf("\nSRC MAC:\t");
+    print_bytes_hex(&(frame->address2), 6);
+    printf("\nBSSID MAC:\t");
+    print_bytes_hex(&(frame->address3), 6);
+    printf("\n");
+}
+
+/*
+ *  Not yet implemented.
+ */
+void handle_ctrl_frame(const u_char *pkt) {
+    printf("CTRL FRAME\n");
+}
+void handle_data_frame(const u_char *pkt) {
+    printf("DATA FRAME\n");
+}
+
+/*
+ *  Pass frame off to appropriate type handler.
+ */
+void handle_frame(const u_char *pkt, enum frame_type *type) {
+    switch (*type) {
+        case MGMT:
+            handle_mgmt_frame(pkt);
+            break;
+        case CTRL:
+            handle_ctrl_frame(pkt);
+            break;
+        case DATA:
+            handle_data_frame(pkt);
+            break;
+    }
+}
 
 /*
 *   Create socket file descriptor with:
@@ -86,14 +225,11 @@ int set_if_promisc(sk_handle *skh, int if_index) {
 void handle_buffer(sk_handle *skh) {
     struct radiotap_header *rthdr = (struct radiotap_header *)skh->buffer;
     int offset = rthdr->it_len;
-    mgmt_frame *frame = (mgmt_frame *)skh->buffer+offset;
-    if (frame->frame_control != 0) {
-        printf("Uh oh, not a mgmt frame. :/ Let's right every kind of 80211 parser :/...\n");
-    } else {
-        printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",frame->source[0],frame->source[1],frame->source[2],frame->source[3],frame->source[4],frame->source[5]);
-        printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",frame->destination[0],frame->destination[1],frame->destination[2],frame->destination[3],frame->destination[4],frame->destination[5]);
-        printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",frame->bssid[0],frame->bssid[1],frame->bssid[2],frame->bssid[3],frame->bssid[4],frame->bssid[5]);
-    }
+    
+    enum frame_type type;
+    frame_ctrl *fctrl = (frame_ctrl *)skh->buffer; //+offset
+    get_frame_type(&(fctrl->fc[0]), &type);
+    handle_frame(skh->buffer, &type);
 }
 
 

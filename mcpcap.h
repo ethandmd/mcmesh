@@ -7,32 +7,26 @@ typedef struct {
 } sk_handle;
 
 /*
- *  802.11ac MAC Frame.
-             subtype-type-version 
- *  FC mgmt: XXXX   - 00 - 00       (i.e. probe request, beacon, auth/deauth, etc)
- *  FC ctrl: XXXX   - 01 - 00
- *  FC data: XXXX   - 10 - 00
-*/
+ *  Frame Control Field for figuring out what is happening.
+ */
 typedef struct {
-    unsigned char frame_control[2];     /* mgmt, ctrl, data */
-    unsigned char frame_duration[2];
-    unsigned char source[6];            /* Source mac addr */
-    unsigned char destination[6];       /* Destination mac addr */ 
-    unsigned char bssid[6];         /* Filtering (BSS?) ID */
-    unsigned char seq_ctrl[2];          /* frame sequence */
-} mgmt_frame;
+    unsigned char fc[2];      /* First two bytes of the MAC header */
+} frame_ctrl;
 
-// /*
-//  *  Dumb cast. Literally. Parsing frames had some ups & downs.
-// */
-// struct dumb_cast {
-//     unsigned char one_one[8];
-//     unsigned char one_two[8];
-//     unsigned char two_one[8];
-//     unsigned char two_two[8];
-//     unsigned char three_one[8];
-//     unsigned char three_two[8];
-// };
+/*
+ *  Three _types_ of 802.11 frames to deal with.
+ */
+enum frame_type {
+    MGMT,
+    CTRL,
+    DATA
+};
+
+void get_frame_type(const u_char *byte, enum frame_type *type);
+
+void handle_mgmt_frame(const u_char *pkt);
+
+void handle_frame(const u_char *pkt, enum frame_type *type);
 
 void create_pack_socket(sk_handle *skh);
 
