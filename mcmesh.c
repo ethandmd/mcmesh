@@ -124,26 +124,27 @@ void parse_cli_args(int argc, char **argv, struct cli_args *args) {
     char *flag;
     if (argc < 3) { 
         printf("HELP:\n");
-        printf("[--i][-interface] {INTERFACE NAME}\t");
-        printf("[--c][-count] {No. PACKETS}\t");
-        printf("[--t][-type] {CAPTURE INTERFACE TYPE}\n");
+        printf(" -i,--interface {INTERFACE NAME} ");
+        printf(" [-c, --count] {No. PACKETS} ");
+        printf(" [-t,--type] {CAPTURE INTERFACE TYPE}\n");
         exit(1); 
     }
     while (cnt < argc) {
         flag = argv[cnt-1];
         
-        if (strcmp(flag, "-interface") == 0 || strcmp(flag, "--i") == 0) {
+        if (strcmp(flag, "--interface") == 0 || strcmp(flag, "-i") == 0) {
             args->iface = argv[cnt];
-        }
-        if (strcmp(flag, "-count") == 0 || strcmp(flag, "--c") == 0) {
+        } else if (strcmp(flag, "--count") == 0 || strcmp(flag, "-c") == 0) {
             args->ITER = strtol(argv[cnt], NULL, 10);
-        }
-        if (strcmp(flag, "-type") == 0 || strcmp(flag, "--t") == 0) {
+        } else if (strcmp(flag, "--type") == 0 || strcmp(flag, "-t") == 0) {
             if (strcmp(argv[cnt], "monitor") == 0) {
                 args->monitor = 1;
             } else {
                 args->monitor = 0;
             }
+        } else {
+            printf("Unrecognized flag: %s. Exiting...\n", flag);
+            exit(1);
         }
         cnt += 2;
     }
