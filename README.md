@@ -11,9 +11,10 @@ To run this program you will need:
 ## Build & Run
 (Makefile under construction.)
 ```
-$ gcc nl_utilities.c mcpcap.c start_mntr.c -o start_mntr $(pkg-config --cflags --libs libnl-genl-3.0)
-$ sudo ./start_mntr {number of packets to capture}
+$ make
+$ sudo ./mcmesh [-interface] {interface name} [-count] {No. of packets to capture} [-type] {capture interface type (i.e. "monitor")}
 ```
+*For interface type, only support station (managed) mode, or monitor mode.
 
 ### Install-Dependencies
 1) Install [libnl](https://www.infradead.org/~tgr/libnl/) with headers for dev (or in the future possibly go to libmnl, libnl tiny (OpenWRT)) in order to use the ```nl80211.h``` enums.
