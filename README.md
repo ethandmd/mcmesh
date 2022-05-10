@@ -35,6 +35,10 @@ $ sudo dnf install libnl3-devel
 ```
 $ sudo apt install lipcap-dev
 ```
++ Example (Fedora 35):
+```
+$ sudo dnf install libcap-devel
+```
 
     
  
