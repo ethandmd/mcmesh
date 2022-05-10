@@ -16,16 +16,23 @@ $ sudo ./start_mntr {number of packets to capture}
 ```
 
 ### Install-Dependencies
-We need to install [libnl](https://www.infradead.org/~tgr/libnl/) with headers for dev (or in the future possibly go to libmnl, libnl tiny (OpenWRT)) in order to use the ```nl80211.h``` enums.
+1) Install [libnl](https://www.infradead.org/~tgr/libnl/) with headers for dev (or in the future possibly go to libmnl, libnl tiny (OpenWRT)) in order to use the ```nl80211.h``` enums.
 Most linux distributions have libnl via their respective package managers.
 
 + Example (Ubuntu 21.04):
 ```
-$ sudo apt-get install libnl-genl-3-dev
+$ sudo apt install libnl-genl-3-dev
 ```
 + Example (Fedora 35):
 ```
 $ sudo dnf install libnl3-devel
+```
+
+2) Install [libpcap](https://github.com/the-tcpdump-group/libpcap) (dev). After building up a version using just packet sockets, for the sake of development speed, it was significantly faster to rely on some of the pre-built ```pcap``` functions.
+
++ Example (Ubuntu 21.04):
+```
+$ sudo apt install lipcap-dev
 ```
 
     
