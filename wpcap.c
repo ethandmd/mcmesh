@@ -129,11 +129,11 @@ void handle_mgmt_frame(const u_char *pkt) {
     mgmt_frame *frame = (mgmt_frame *)(pkt);
     assert(!(frame->frame_control.fc[1] & 0x80) && !(frame->frame_control.fc[1] & 0x40));   /* Sanity check for TO/FROM DS. */
     print_mgmt_subtype(frame->frame_control.fc[0]);
-    printf("DEST MAC:\t");
+    printf("\nDEST MAC:\t");
     print_bytes_hex(&(frame->address1), 6);
-    printf("SRC MAC:\t");
+    printf("\nSRC MAC:\t");
     print_bytes_hex(&(frame->address2), 6);
-    printf("BSSID MAC:\t");
+    printf("\nBSSID MAC:\t");
     print_bytes_hex(&(frame->address3), 6);
     printf("\n");
 }
