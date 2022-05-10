@@ -1,19 +1,16 @@
 #include "wpcap.h"
-#include "mcpcap.h"
-#include <linux/if_ether.h>
-
-
 
 /*
  *  TODO: Implement timestamp, appropriate casts & printing bytes.
  *  Callback function for pcap_loop().
  */
 void packet_callback(u_char *arg, const struct pcap_pkthdr *pkthdr, const u_char *pkt) {
-    // struct radiotap_header *rthdr;
-    // rthdr = (struct radiotap_header *)pkt;  //If nothing else from this project: I <3 casting.
-    // int offset = rthdr->it_len;     //Get radiotap offset
+    struct radiotap_header *rthdr;
+    rthdr = (struct radiotap_header *)pkt;  //If nothing else from this project: I <3 casting.
+    int offset = rthdr->it_len;     //Get radiotap offset
+
     enum frame_type type;
-    frame_ctrl *fctrl = (frame_ctrl *)pkt;
+    frame_ctrl *fctrl = (frame_ctrl *)pkt + offset; //To radiotap or to not radiotap...
     get_frame_type(&(fctrl->fc[0]), &type);
     handle_frame(pkt, &type);
 }

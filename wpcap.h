@@ -1,4 +1,6 @@
 #include <pcap.h>
+#include "mcpcap.h"
+
 
 typedef struct {
     pcap_t *handle;
