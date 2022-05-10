@@ -5,7 +5,7 @@
 
 typedef struct {
     int sockfd;
-    char *buffer;
+    u_char *buffer;
 } sk_handle;
 
 /*

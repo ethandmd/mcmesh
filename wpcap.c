@@ -44,6 +44,8 @@ int init_wpcap(wifi_pcap_t *wpt, const char *dev_name, struct bpf_program *fp, c
         fprintf(stderr, "Could not apply BPF fitler.\n");//, wpt->errbuf);
         //return -1;
     }
+    
+    return 0;
 }
 
 void cleanup_wpcap(wifi_pcap_t *wpt, struct bpf_program *fp) {
@@ -64,11 +66,13 @@ void view_packets(wifi_pcap_t  *wpt, int ITER, int monitor) {
     printf("Waiting for packets...\n");
     int ret;
     if (monitor) {
-        pcap_loop(wpt->handle, ITER, packet_callback, NULL);
+        ret = pcap_loop(wpt->handle, ITER, packet_callback, NULL);
     } else {
-        pcap_loop(wpt->handle, ITER, eth_pkt_callback, NULL);
+        ret = pcap_loop(wpt->handle, ITER, eth_pkt_callback, NULL);
     }
+
     if (ret < 0) {
-        fprintf(stderr, "Unable to capture %d packets.\n", ITER);//, wpt->errbuf);
+        printf("Could not capture packets with pcap_loop.\n");
     }
+
 }

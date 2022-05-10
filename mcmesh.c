@@ -132,6 +132,7 @@ int main(int argc, char **argv) {
         keep_if.if_name = argv[1];
         break;
 
+    /* Limit number of packets captured to ITER */
     case 4:
         monitor = 1;
         keep_if.if_name = argv[1];
