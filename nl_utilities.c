@@ -149,8 +149,8 @@ static int add_monitor_flags(struct nl_msg *msg) {
 
     /* These three lines commented == monitor flags := none */
     //nla_put_flag(flag_msg, NL80211_MNTR_FLAG_FCSFAIL);
-    nla_put_flag(flag_msg, NL80211_MNTR_FLAG_CONTROL);
-    printf("\t(control flag)\n");
+    //nla_put_flag(flag_msg, NL80211_MNTR_FLAG_CONTROL);
+    //printf("\t(control flag)\n");
     nla_put_flag(flag_msg, NL80211_MNTR_FLAG_OTHER_BSS);
     printf("\t(other bss flag)\n");
 
