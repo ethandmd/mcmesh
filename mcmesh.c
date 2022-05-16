@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-//#include <signal.h>
+#include <signal.h>
 
 #include "nl_utilities.h"
 #include "handle80211.h"
@@ -10,9 +10,19 @@
 
 // volatile sig_atomic_t signal_status = 1;
 
-// void sig_handler(int signal) {
-//     signal_status = 0;
-// }
+void onExit() {
+    //run to cleanup the changed setup
+    
+}
+
+void sig_handler(int signal) {
+    if (signal == SIGINT || signal == SIGQUIT) {
+        //standard terminal C-c and c-/, interupt and quit
+        printf("this will mess things up, we need to undo monitor mode changes\n");
+        //call the cleanup function here
+        exit(0);
+    }
+}
 
 void print_interface(struct if_info *info) {
     printf("Interface: %s\n", info->if_name);
@@ -161,11 +171,7 @@ int main(int argc, char **argv) {
     struct bpf_program fp;
     char filter_expr[] = "";//type mgt subtype beacon";
 
-    // struct sigaction sa;
-    // sa.sa_handler = sig_handler;
-    // sa.sa_flags = 0;
-    // sigemptyset(&sa.sa_mask);
-    //sigaction(SIGINT, &sa, NULL);
+    signal(SIGINT, sig_handler);
 
     /*
     *  STEP 0: TODO: Consider adding channel parameter.
