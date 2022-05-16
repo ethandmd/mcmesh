@@ -8,12 +8,6 @@
 #include "handle80211.h"
 #include "wpcap.h"
 
-// volatile sig_atomic_t signal_status = 1;
-
-void onExit() {
-    //run to cleanup the changed setup
-    
-}
 
 void sig_handler(int signal) {
     if (signal == SIGINT || signal == SIGQUIT) {
