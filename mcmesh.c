@@ -8,13 +8,17 @@
 #include "handle80211.h"
 #include "wpcap.h"
 
+wifi_pcap_t wpt; //global to allow acess to the .handle from sig_handler
 
 void sig_handler(int signal) {
     if (signal == SIGINT || signal == SIGQUIT) {
         //standard terminal C-c and c-/, interupt and quit
-        printf("this will mess things up, we need to undo monitor mode changes\n");
-        //call the cleanup function here
-        exit(0);
+	
+	printf("Caught a polite terminating signal.\n");
+	
+	//do the cleanup
+	pcap_breakloop(wpt.handle); //should stop the pcap_loop in view_packets
+	//main loop should return and perform standard cleanup
     }
 }
 
@@ -27,40 +31,42 @@ void print_interface(struct if_info *info) {
     printf("\tIFFREQ: %d\n", info->if_freq);
 }
 
-// void init_packet_socket(sk_handle *skh, struct if_info *info) {
-//     create_pack_socket(skh);
-//     if (!skh->sockfd) {
-//         fprintf(stderr, "Could not allocate new packet socket. Are you running this as root/sudo?\n");
-//     }
-//     if (bind_pack_socket(skh, info->if_index) < 0) {
-//         fprintf(stderr, "Could not bind packet socket to %s", info->if_name);
-//     }
-//     //Optional...?
-//     if (set_if_promisc(skh, info->if_index) < 0) {
-//         printf("Could not set %s to promiscuous mode.\n", info->if_name);
-//     }
-// }
+/* possible removable ??
+void init_packet_socket(sk_handle *skh, struct if_info *info) {
+    create_pack_socket(skh);
+    if (!skh->sockfd) {
+        fprintf(stderr, "Could not allocate new packet socket. Are you running this as root/sudo?\n");
+    }
+    if (bind_pack_socket(skh, info->if_index) < 0) {
+        fprintf(stderr, "Could not bind packet socket to %s", info->if_name);
+    }
+    //Optional...?
+    if (set_if_promisc(skh, info->if_index) < 0) {
+        printf("Could not set %s to promiscuous mode.\n", info->if_name);
+    }
+}
 
-// void recv_socket(sk_handle *skh, int ITER) {
-//     int fail = 0;
-//     int count = 0;
-//     skh->buffer = (char *)malloc(65336);     //Going big! Eth MTU is probably fine.
-//     memset(skh->buffer, 0, 65536);
-//     printf("Waiting to receive packets...\n");
-//     while (count < ITER) {
-//         count++;
-//         if (read_socket(skh) < 0) {
-//             fail++;
-//             printf("Failed to read %d/%d packets.\n", fail, count);
-//         } else {
-//             handle_buffer(skh);
-//         }
-//     }
-// }
-
+void recv_socket(sk_handle *skh, int ITER) {
+    int fail = 0;
+    int count = 0;
+    skh->buffer = (char *)malloc(65336);     //Going big! Eth MTU is probably fine.
+    memset(skh->buffer, 0, 65536);
+    printf("Waiting to receive packets...\n");
+    while (count < ITER) {
+        count++;
+        if (read_socket(skh) < 0) {
+            fail++;
+            printf("Failed to read %d/%d packets.\n", fail, count);
+        } else {
+            handle_buffer(skh);
+        }
+    }
+}
+*/
     /*
     *  Initialize netlink socket.
     */
+
 int start_netlink(nl_handle *nl) {
     nl_init(nl);
     if (!nl->sk) {
@@ -154,16 +160,26 @@ void parse_cli_args(int argc, char **argv, struct cli_args *args) {
     }
 }
 
+/*
+  fill the global wpt struct
+*/
+unsigned char populate_wpcap (struct if_info new_if, struct bpf_program fp, int monitor, char* filter_expr) {
+    unsigned char ret = init_wpcap(&wpt, new_if.if_name, &fp, filter_expr, monitor);
+    if (ret < 0) {
+	printf("Unable to open pcap session. (populate_wpcap).\n");
+    }
+    return ret;
+}
+
 int main(int argc, char **argv) {
     struct cli_args args;
     nl_handle nl;
     //sk_handle skh;
     int monitor;
-    wifi_pcap_t wpt;
     struct if_info keep_if = {0};
     struct if_info new_if = {0};
     struct bpf_program fp;
-    char filter_expr[] = "";//type mgt subtype beacon";
+    char* filter_expr = "";//type mgt subtype beacon"; 
 
     signal(SIGINT, sig_handler);
 
@@ -193,12 +209,9 @@ int main(int argc, char **argv) {
     * Create & configure packet socket.
     */
     //init_packet_socket(&skh, &new_if);
-    int cont = 1;
-    if (init_wpcap(&wpt, new_if.if_name, &fp, filter_expr, monitor) < 0) {
-        cont = 0;
-        printf("Unable to open pcap session on %s.\n", new_if.if_name);
-    }
-
+    unsigned char cont = populate_wpcap(new_if, fp, monitor, filter_expr);
+    if (cont < 0) cont = 0; //don't do the packet capture
+    
     /* 
     *  Receive and parse data from the socket.
     */
